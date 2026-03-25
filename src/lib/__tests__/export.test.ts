@@ -1,6 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { exportMapChartConfig } from "../export";
+import {
+  buildTagLabel,
+  buildAllTagLabels,
+  filterToPlayers,
+  collectVassalLocations,
+  buildVassalOverlays,
+  exportMapChartConfig,
+} from "../export";
 import { buildMinimalSave } from "./fixtures/minimal-save";
+import type { RGB } from "../types";
 
 const provinceMapping: Record<string, string[]> = {
   Uppland: ["Stockholm"],
@@ -8,6 +16,119 @@ const provinceMapping: Record<string, string[]> = {
   Middlesex: ["London"],
   Edinburgh: ["Edinburgh"],
 };
+
+// =============================================================================
+// Pure helper tests
+// =============================================================================
+
+describe("buildTagLabel", () => {
+  it("returns 'TAG - PlayerName' for player tags", () => {
+    expect(buildTagLabel("SWE", { SWE: ["Alice"] })).toBe("SWE - Alice");
+  });
+
+  it("joins multiple player names with comma", () => {
+    expect(buildTagLabel("FRA", { FRA: ["Alice", "Bob"] })).toBe("FRA - Alice, Bob");
+  });
+
+  it("returns bare tag for non-player countries", () => {
+    expect(buildTagLabel("ENG", { SWE: ["Alice"] })).toBe("ENG");
+  });
+
+  it("returns bare tag when tagToPlayers is empty", () => {
+    expect(buildTagLabel("SWE", {})).toBe("SWE");
+  });
+});
+
+describe("buildAllTagLabels", () => {
+  it("builds labels for all tags", () => {
+    const labels = buildAllTagLabels(["SWE", "ENG"], { SWE: ["Alice"] });
+    expect(labels).toEqual({ SWE: "SWE - Alice", ENG: "ENG" });
+  });
+
+  it("returns empty for empty tags", () => {
+    expect(buildAllTagLabels([], {})).toEqual({});
+  });
+});
+
+describe("filterToPlayers", () => {
+  it("keeps only player-owned countries", () => {
+    const locs = { SWE: ["stockholm"], ENG: ["london"], FRA: ["paris"] };
+    const result = filterToPlayers(locs, { SWE: ["Alice"] });
+    expect(Object.keys(result)).toEqual(["SWE"]);
+  });
+
+  it("returns all countries when no players", () => {
+    const locs = { SWE: ["stockholm"], ENG: ["london"] };
+    const result = filterToPlayers(locs, {});
+    expect(result).toEqual(locs);
+  });
+});
+
+describe("collectVassalLocations", () => {
+  it("collects locations from vassal tags", () => {
+    const allLocs = { SCO: ["edinburgh", "glasgow"], WLS: ["cardiff"] };
+    const result = collectVassalLocations(new Set(["SCO", "WLS"]), allLocs);
+    expect(result).toEqual(["edinburgh", "glasgow", "cardiff"]);
+  });
+
+  it("skips vassal tags with no locations", () => {
+    const result = collectVassalLocations(new Set(["MISSING"]), { SWE: ["stockholm"] });
+    expect(result).toEqual([]);
+  });
+
+  it("returns empty for empty vassal set", () => {
+    expect(collectVassalLocations(new Set(), { SWE: ["stockholm"] })).toEqual([]);
+  });
+});
+
+describe("buildVassalOverlays", () => {
+  it("creates vassal entries with lightened colors", () => {
+    const overlays = buildVassalOverlays(
+      { ENG: ["Alice"] },
+      { ENG: new Set(["SCO"]) },
+      { ENG: ["london"], SCO: ["edinburgh"] },
+      { ENG: [255, 0, 0] },
+    );
+    expect(overlays.locations["ENG_vassals"]).toEqual(["edinburgh"]);
+    expect(overlays.labels["ENG_vassals"]).toBe("ENG - subjects");
+    expect(overlays.colors["ENG_vassals"]).toEqual([255, 170, 170]);
+  });
+
+  it("skips overlords with no vassals", () => {
+    const overlays = buildVassalOverlays(
+      { ENG: ["Alice"] },
+      {},
+      { ENG: ["london"] },
+      { ENG: [255, 0, 0] },
+    );
+    expect(overlays.locations).toEqual({});
+  });
+
+  it("skips when vassal locations are empty", () => {
+    const overlays = buildVassalOverlays(
+      { ENG: ["Alice"] },
+      { ENG: new Set(["SCO"]) },
+      { ENG: ["london"] }, // SCO has no locations
+      { ENG: [255, 0, 0] },
+    );
+    expect(overlays.locations).toEqual({});
+  });
+
+  it("handles overlord with no color", () => {
+    const overlays = buildVassalOverlays(
+      { ENG: ["Alice"] },
+      { ENG: new Set(["SCO"]) },
+      { ENG: ["london"], SCO: ["edinburgh"] },
+      {}, // no colors
+    );
+    expect(overlays.locations["ENG_vassals"]).toEqual(["edinburgh"]);
+    expect(overlays.colors["ENG_vassals"]).toBeUndefined();
+  });
+});
+
+// =============================================================================
+// Integration tests
+// =============================================================================
 
 describe("exportMapChartConfig", () => {
   it("exports all countries by default", () => {
@@ -52,12 +173,10 @@ describe("exportMapChartConfig", () => {
     expect(labels).toContain("ENG - Alice");
     expect(labels).toContain("ENG - subjects");
 
-    // Vassal color should be lighter than parent
     const vassalGroup = Object.entries(config.groups).find(
       ([, g]) => g.label === "ENG - subjects",
     );
     expect(vassalGroup).toBeDefined();
-    // #ff0000 lightened 2/3 toward white = #ffaaaa
     expect(vassalGroup![0]).toBe("#ffaaaa");
   });
 
@@ -90,7 +209,6 @@ describe("exportMapChartConfig", () => {
       players: [],
     });
     const config = exportMapChartConfig(save, provinceMapping, { playersOnly: true });
-    // No players found, so playersOnly should still show all
     const labels = Object.values(config.groups).map((g) => g.label);
     expect(labels).toContain("SWE");
   });
@@ -99,12 +217,24 @@ describe("exportMapChartConfig", () => {
     const save = buildMinimalSave({
       locationNames: ["stockholm"],
       tags: { 0: "ENG", 1: "SCO" },
-      ownership: { 0: 0 }, // SCO has no owned locations
+      ownership: { 0: 0 },
       ioVassals: [{ leader: 0, members: [0, 1] }],
       players: [{ name: "Alice", country: 0 }],
     });
     const config = exportMapChartConfig(save, provinceMapping, { playersOnly: true });
     const labels = Object.values(config.groups).map((g) => g.label);
     expect(labels).not.toContain("ENG - subjects");
+  });
+
+  it("accepts ParsedSave directly", () => {
+    const parsed = {
+      countryLocations: { SWE: ["stockholm"] },
+      tagToPlayers: { SWE: ["Alice"] },
+      countryColors: { SWE: [0, 0, 255] as RGB },
+      overlordSubjects: {},
+    };
+    const config = exportMapChartConfig(parsed, provinceMapping);
+    const labels = Object.values(config.groups).map((g) => g.label);
+    expect(labels).toContain("SWE - Alice");
   });
 });
