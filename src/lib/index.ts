@@ -6,6 +6,7 @@ export {
   parseCountryTags,
   parseLocationOwnership,
   parseCountryColors,
+  parseCountryCapitals,
   parseSubjects,
   parsePlayerCountries,
 } from "./save-parser";

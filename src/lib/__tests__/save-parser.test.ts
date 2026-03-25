@@ -4,6 +4,7 @@ import {
   parseCountryTags,
   parseLocationOwnership,
   parseCountryColors,
+  parseCountryCapitals,
   parseSubjects,
   parsePlayerCountries,
   parseMeltedSave,
@@ -152,6 +153,28 @@ describe("parseCountryColors", () => {
   });
 });
 
+describe("parseCountryCapitals", () => {
+  it("extracts country ID -> capital location ID", () => {
+    const lines = [
+      "countries={",
+      "\tdatabase={",
+      "\t\t0={",
+      "\t\t\tcapital=100",
+      "\t\t}",
+      "\t\t1={",
+      "\t\t\tcapital=200",
+      "\t\t}",
+      "\t}",
+      "}",
+    ];
+    expect(parseCountryCapitals(lines)).toEqual({ 0: 100, 1: 200 });
+  });
+
+  it("returns empty when no countries section", () => {
+    expect(parseCountryCapitals(["other={}"])).toEqual({});
+  });
+});
+
 describe("parseSubjects", () => {
   const baseTags = { 0: "ENG", 1: "FRA", 2: "SWE", 3: "SCO", 4: "WLS" };
 
@@ -170,7 +193,7 @@ describe("parseSubjects", () => {
       "}",
       "next_section={",
     ];
-    const result = parseSubjects(lines, baseTags);
+    const result = parseSubjects(lines, baseTags, {}, {});
     expect(result["ENG"]).toEqual(new Set(["SCO", "WLS"]));
   });
 
@@ -189,33 +212,26 @@ describe("parseSubjects", () => {
       "}",
       "next_section={",
     ];
-    expect(parseSubjects(lines, baseTags)).toEqual({});
+    expect(parseSubjects(lines, baseTags, {}, {})).toEqual({});
   });
 
-  it("matches diplomacy subjects to overlord candidates", () => {
+  it("matches subjects to overlords via capital ownership", () => {
     const lines = [
-      // overlord candidate (has subject_tax)
-      "database={",
-      "\tflag=FRA",
-      "\tlast_months_subject_tax=50.5",
-      "}",
-      // diplomacy section
       "diplomacy_manager={",
       "\t3={",
       "\t\tliberty_desire=10",
-      "\t\trelations={",
-      "\t\t\t1={",
-      "\t\t\t}",
-      "\t\t}",
       "\t}",
       "}",
-      "next_section={",
+      "next={",
     ];
-    const result = parseSubjects(lines, baseTags);
-    expect(result["FRA"]).toEqual(new Set(["SCO"]));
+    // SCO (3) has capital at location 50, which is owned by ENG
+    const locationOwners = { 50: "ENG" };
+    const capitals = { 3: 50 };
+    const result = parseSubjects(lines, baseTags, locationOwners, capitals);
+    expect(result["ENG"]).toEqual(new Set(["SCO"]));
   });
 
-  it("skips diplomacy subjects already matched by IO", () => {
+  it("skips capital-ownership subjects already matched by IO", () => {
     const lines = [
       "international_organization_manager={",
       "\tdatabase={",
@@ -228,29 +244,35 @@ describe("parseSubjects", () => {
       "\t\t}",
       "\t}",
       "}",
-      "database={",
-      "\tflag=FRA",
-      "\tlast_months_subject_tax=50",
-      "}",
       "diplomacy_manager={",
       "\t3={",
       "\t\tliberty_desire=10",
-      "\t\trelations={",
-      "\t\t\t1={",
-      "\t\t\t}",
-      "\t\t}",
       "\t}",
       "}",
       "next={",
     ];
-    const result = parseSubjects(lines, baseTags);
-    // SCO is in ENG's IO, should NOT also appear under FRA via diplomacy
+    // SCO's capital owned by FRA — but SCO is already matched to ENG via IO
+    const result = parseSubjects(lines, baseTags, { 50: "FRA" }, { 3: 50 });
     expect(result["ENG"]).toEqual(new Set(["SCO"]));
     expect(result["FRA"]).toBeUndefined();
   });
 
+  it("skips subjects whose capital is self-owned", () => {
+    const lines = [
+      "diplomacy_manager={",
+      "\t3={",
+      "\t\tliberty_desire=10",
+      "\t}",
+      "}",
+      "next={",
+    ];
+    // SCO's capital is owned by SCO itself
+    const result = parseSubjects(lines, baseTags, { 50: "SCO" }, { 3: 50 });
+    expect(result).toEqual({});
+  });
+
   it("returns empty when no IO or diplomacy sections", () => {
-    expect(parseSubjects(["nothing here"], baseTags)).toEqual({});
+    expect(parseSubjects(["nothing here"], baseTags, {}, {})).toEqual({});
   });
 });
 
@@ -322,7 +344,7 @@ describe("parseMeltedSave (integration)", () => {
     });
   });
 
-  it("includes vassal relationships", () => {
+  it("includes IO vassal relationships", () => {
     const save = buildMinimalSave({
       locationNames: ["stockholm", "edinburgh"],
       tags: { 0: "ENG", 1: "SCO" },
@@ -331,6 +353,19 @@ describe("parseMeltedSave (integration)", () => {
     });
     const result = parseMeltedSave(save);
     expect(result.overlordSubjects["ENG"]).toEqual(new Set(["SCO"]));
+  });
+
+  it("detects vassals via capital ownership", () => {
+    const save = buildMinimalSave({
+      locationNames: ["london", "cardiff"],
+      tags: { 0: "ENG", 1: "WLS" },
+      ownership: { 0: 0, 1: 0 }, // ENG owns both locations including WLS's capital
+      colors: { ENG: [255, 0, 0], WLS: [0, 255, 0] },
+      capitals: { 0: 0, 1: 1 }, // WLS capital = location 1, owned by ENG
+      diplomacySubjects: [{ countryId: 1, libertyDesire: -14, relations: [] }],
+    });
+    const result = parseMeltedSave(save);
+    expect(result.overlordSubjects["ENG"]).toEqual(new Set(["WLS"]));
   });
 
   it("handles empty save gracefully", () => {

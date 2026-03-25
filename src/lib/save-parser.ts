@@ -116,14 +116,41 @@ export function parseCountryColors(lines: string[]): Record<string, RGB> {
   return colors;
 }
 
-/** Step 5: Extract subject/vassal relationships via IOs and diplomacy. */
+/** Step 5a: Extract country capitals from the countries database. */
+export function parseCountryCapitals(lines: string[]): Record<number, number> {
+  const capitals: Record<number, number> = {};
+  let currentId: number | null = null;
+  const countriesIdx = lines.findIndex((l) => l.trim() === "countries={");
+  if (countriesIdx === -1) return capitals;
+
+  for (let i = countriesIdx; i < lines.length; i++) {
+    const stripped = lines[i].trim();
+    const idMatch = stripped.match(/^(\d+)=\{$/);
+    if (idMatch && lines[i].startsWith("\t\t")) {
+      currentId = parseInt(idMatch[1]);
+    }
+    const capMatch = stripped.match(/^capital=(\d+)$/);
+    if (capMatch && currentId !== null) {
+      capitals[currentId] = parseInt(capMatch[1]);
+    }
+  }
+  return capitals;
+}
+
+/** Step 5: Extract subject/vassal relationships via IOs and capital ownership. */
 export function parseSubjects(
   lines: string[],
   countryTags: Record<number, string>,
+  locationOwners: Record<number, string>,
+  countryCapitals: Record<number, number>,
 ): Record<string, Set<string>> {
   const overlordSubjects: Record<string, Set<string>> = {};
+  const reverseTagMap: Record<string, number> = {};
+  for (const [id, tag] of Object.entries(countryTags)) {
+    reverseTagMap[tag] = parseInt(id as string);
+  }
 
-  // Source 1: IO type=loc entries
+  // Source 1: IO type=loc entries (reliable for lordship subjects)
   const ioStartIdx = lines.findIndex((l) => l.trimEnd() === "international_organization_manager={");
   if (ioStartIdx !== -1) {
     let ioEndIdx = lines.length;
@@ -168,27 +195,13 @@ export function parseSubjects(
     }
   }
 
-  const ioMatched = new Set<string>();
+  const alreadyMatched = new Set<string>();
   for (const subs of Object.values(overlordSubjects)) {
-    for (const s of subs) ioMatched.add(s);
+    for (const s of subs) alreadyMatched.add(s);
   }
 
-  // Source 2: Overlord candidates (countries with subject_tax)
-  const overlordCandidates = new Set<string>();
-  {
-    let curFlag: string | null = null;
-    for (const line of lines) {
-      const stripped = line.trim();
-      const fm = stripped.match(/^flag=(\w+)$/);
-      if (fm) curFlag = fm[1];
-      if (curFlag && stripped.startsWith("last_months_subject_tax=")) {
-        const val = parseFloat(stripped.split("=")[1]);
-        if (val > 0) overlordCandidates.add(curFlag);
-      }
-    }
-  }
-
-  // Source 3: Diplomacy relations
+  // Source 2: Capital ownership — subjects with liberty_desire whose capital
+  // is owned by a different country → that country is the overlord.
   const dmStartIdx = lines.findIndex((l) => l.trimEnd() === "diplomacy_manager={");
   if (dmStartIdx !== -1) {
     let dmEndIdx = lines.length;
@@ -201,21 +214,19 @@ export function parseSubjects(
 
     let curCountry: number | null = null;
     let hasLiberty = false;
-    let relationPartners: number[] = [];
 
     const flush = () => {
-      if (curCountry !== null && hasLiberty) {
-        const subTag = countryTags[curCountry];
-        if (subTag && !ioMatched.has(subTag)) {
-          for (const rp of relationPartners) {
-            const rpTag = countryTags[rp];
-            if (rpTag && overlordCandidates.has(rpTag)) {
-              if (!overlordSubjects[rpTag]) overlordSubjects[rpTag] = new Set();
-              overlordSubjects[rpTag].add(subTag);
-              break;
-            }
-          }
-        }
+      if (curCountry === null || !hasLiberty) return;
+      const subTag = countryTags[curCountry];
+      if (!subTag || alreadyMatched.has(subTag)) return;
+
+      const capLoc = countryCapitals[curCountry];
+      if (capLoc === undefined) return;
+
+      const capOwnerTag = locationOwners[capLoc];
+      if (capOwnerTag && capOwnerTag !== subTag) {
+        if (!overlordSubjects[capOwnerTag]) overlordSubjects[capOwnerTag] = new Set();
+        overlordSubjects[capOwnerTag].add(subTag);
       }
     };
 
@@ -228,14 +239,9 @@ export function parseSubjects(
           flush();
           curCountry = parseInt(m[1]);
           hasLiberty = false;
-          relationPartners = [];
         }
       }
       if (stripped.startsWith("liberty_desire=")) hasLiberty = true;
-      if (line.startsWith("\t\t\t") && !line.startsWith("\t\t\t\t")) {
-        const m = stripped.match(/^(\d+)=\{$/);
-        if (m) relationPartners.push(parseInt(m[1]));
-      }
     }
     flush();
   }
@@ -287,7 +293,8 @@ export function parseMeltedSave(text: string): ParsedSave {
   const countryTags = parseCountryTags(lines);
   const locationOwners = parseLocationOwnership(lines, countryTags);
   const countryColors = parseCountryColors(lines);
-  const overlordSubjects = parseSubjects(lines, countryTags);
+  const countryCapitals = parseCountryCapitals(lines);
+  const overlordSubjects = parseSubjects(lines, countryTags, locationOwners, countryCapitals);
   const playerCountries = parsePlayerCountries(lines, countryTags);
 
   const countryLocations: Record<string, string[]> = {};

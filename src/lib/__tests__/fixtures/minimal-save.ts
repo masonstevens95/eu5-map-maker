@@ -9,6 +9,8 @@ export function buildMinimalSave(overrides: {
   tags?: Record<number, string>;
   ownership?: Record<number, number>;
   colors?: Record<string, [number, number, number]>;
+  /** country_id -> capital_location_id */
+  capitals?: Record<number, number>;
   ioVassals?: { leader: number; members: number[] }[];
   overlordCandidateFlags?: string[];
   diplomacySubjects?: { countryId: number; libertyDesire: number; relations: number[] }[];
@@ -18,6 +20,7 @@ export function buildMinimalSave(overrides: {
   const tags = overrides.tags ?? { 0: "SWE", 1: "FRA", 2: "ENG" };
   const ownership = overrides.ownership ?? { 0: 0, 1: 1, 2: 2 };
   const colors = overrides.colors ?? { SWE: [0, 0, 255], FRA: [0, 0, 200], ENG: [255, 0, 0] };
+  const capitals = overrides.capitals ?? {};
   const ioVassals = overrides.ioVassals ?? [];
   const overlordFlags = overrides.overlordCandidateFlags ?? [];
   const dipSubjects = overrides.diplomacySubjects ?? [];
@@ -42,13 +45,23 @@ export function buildMinimalSave(overrides: {
     sections.push(`\t\t${id}=${tag}`);
   }
   sections.push("\t}");
+  // Build reverse map: tag -> country ID for database entries
+  const tagToId: Record<string, number> = {};
+  for (const [id, tag] of Object.entries(tags)) {
+    tagToId[tag] = parseInt(id);
+  }
+
   sections.push("\tdatabase={");
   for (const [flag, [r, g, b]] of Object.entries(colors)) {
-    sections.push(`\t\t0={`);
+    const countryId = tagToId[flag] ?? 0;
+    sections.push(`\t\t${countryId}={`);
     sections.push(`\t\t\tflag=${flag}`);
     sections.push(`\t\t\tcolor=rgb {`);
     sections.push(`\t\t\t\t${r} ${g} ${b}`);
     sections.push(`\t\t\t}`);
+    if (capitals[countryId] !== undefined) {
+      sections.push(`\t\t\tcapital=${capitals[countryId]}`);
+    }
     // Add subject_tax for overlord candidates
     if (overlordFlags.includes(flag)) {
       sections.push(`\t\t\tlast_months_subject_tax=100.5`);
