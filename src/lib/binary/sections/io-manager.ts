@@ -42,8 +42,11 @@ export function readIOEntries(
       r.readToken();
       tok === BinaryToken.I32 ? r.readI32() : r.readU32();
       r.expectEqual();
-      r.expectOpen();
-      readIOEntry(r, countryTags, overlordSubjects, ioMatched);
+      if (r.expectOpen()) {
+        readIOEntry(r, countryTags, overlordSubjects, ioMatched);
+      } else {
+        r.skipValue(); // non-block entry (e.g., "ID = none")
+      }
     } else {
       r.readToken();
       if (r.peekToken() === BinaryToken.EQUAL) {
@@ -55,46 +58,77 @@ export function readIOEntries(
 }
 
 /** Read a single IO entry. If type=loc, record the subject relationships. */
+/**
+ * Read a single IO entry. Uses two-pass for reliable parsing.
+ * If type is lordship (loc/autocephalous_patriarchate), records subjects.
+ */
 export function readIOEntry(
   r: TokenReader,
   countryTags: Record<number, string>,
   overlordSubjects: Record<string, Set<string>>,
   ioMatched: Set<string>,
 ): void {
-  let ioType: number | null = null;
-  let ioLeader: number | null = null;
-  let ioMembers: number[] = [];
-  let depth = 1;
+  // Pass 1: find field offsets
+  const startPos = r.pos;
+  r.skipBlock();
+  const endPos = r.pos;
 
-  while (!r.done && depth > 0) {
+  let typeOffset = -1;
+  let leaderOffset = -1;
+  let membersOffset = -1;
+
+  r.pos = startPos;
+  let depth = 1;
+  while (r.pos < endPos && depth > 0) {
+    const fieldPos = r.pos;
     const tok = r.readToken();
     if (tok === BinaryToken.CLOSE) { depth--; continue; }
     if (tok === BinaryToken.OPEN) { depth++; continue; }
     if (tok === BinaryToken.EQUAL) continue;
     if (isValueToken(tok)) { r.skipValuePayload(tok); continue; }
-    if (depth !== 1) continue;
 
-    if (tok === T.type || tok === T.TYPE_ENGINE) {
-      r.expectEqual();
-      ioType = r.readToken();
-    } else if (tok === T.leader) {
-      r.expectEqual();
-      ioLeader = r.readIntValue();
-    } else if (tok === T.allMembers) {
-      r.expectEqual();
-      r.expectOpen();
-      while (!r.done && r.peekToken() !== BinaryToken.CLOSE) {
-        const val = r.readIntValue();
-        if (val !== null) ioMembers.push(val);
-      }
-      if (!r.done) r.readToken(); // }
-    } else if (r.peekToken() === BinaryToken.EQUAL) {
-      r.readToken();
+    if (depth === 1 && r.peekToken() === BinaryToken.EQUAL) {
+      if (tok === T.type || tok === T.TYPE_ENGINE) typeOffset = fieldPos;
+      else if (tok === T.leader) leaderOffset = fieldPos;
+      else if (tok === T.allMembers) membersOffset = fieldPos;
+      r.readToken(); // =
       r.skipValue();
     }
   }
 
-  if (ioType === T.loc && ioLeader !== null && countryTags[ioLeader]) {
+  // Pass 2: read values
+  let ioTypeName: string | null = null;
+  let ioLeader: number | null = null;
+  const ioMembers: number[] = [];
+
+  if (typeOffset >= 0) {
+    r.pos = typeOffset;
+    r.readToken(); r.expectEqual();
+    ioTypeName = r.readStringValue();
+  }
+
+  if (leaderOffset >= 0) {
+    r.pos = leaderOffset;
+    r.readToken(); r.expectEqual();
+    ioLeader = r.readIntValue();
+  }
+
+  if (membersOffset >= 0) {
+    r.pos = membersOffset;
+    r.readToken(); r.expectEqual();
+    r.expectOpen();
+    while (!r.done && r.peekToken() !== BinaryToken.CLOSE) {
+      const val = r.readIntValue();
+      if (val !== null) ioMembers.push(val);
+    }
+    if (!r.done) r.readToken(); // }
+  }
+
+  r.pos = endPos;
+
+  // Check for lordship IO
+  const isLordship = ioTypeName === "loc" || ioTypeName === "autocephalous_patriarchate";
+  if (isLordship && ioLeader !== null && countryTags[ioLeader]) {
     const leaderTag = countryTags[ioLeader];
     for (const mid of ioMembers) {
       if (mid !== ioLeader && countryTags[mid]) {

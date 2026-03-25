@@ -226,7 +226,7 @@ describe("readIOManager", () => {
     const data = bytes(
       u16(DB), eq(), open(),
         uintVal(0), eq(), open(),
-          u16(T.TYPE_ENGINE), eq(), u16(T.loc!),
+          u16(T.TYPE_ENGINE), eq(), quotedStr("autocephalous_patriarchate"),
           u16(T.leader!), eq(), uintVal(0),
           u16(T.allMembers!), eq(), open(), uintVal(0), uintVal(1), close(),
         close(),
@@ -241,9 +241,9 @@ describe("readIOManager", () => {
 });
 
 describe("readIOEntry", () => {
-  it("extracts loc-type IO with leader and members", () => {
+  it("extracts lordship IO with leader and members", () => {
     const data = bytes(
-      u16(T.TYPE_ENGINE), eq(), u16(T.loc!),
+      u16(T.TYPE_ENGINE), eq(), quotedStr("autocephalous_patriarchate"),
       u16(T.leader!), eq(), uintVal(0),
       u16(T.allMembers!), eq(), open(),
         uintVal(0), uintVal(1), uintVal(2),
@@ -259,9 +259,22 @@ describe("readIOEntry", () => {
     expect(matched).toEqual(new Set(["SCO", "WLS"]));
   });
 
-  it("ignores non-loc IO types", () => {
+  it("also matches type=loc for lordship", () => {
     const data = bytes(
-      u16(T.TYPE_ENGINE), eq(), u16(0x9999), // not loc
+      u16(T.TYPE_ENGINE), eq(), quotedStr("loc"),
+      u16(T.leader!), eq(), uintVal(0),
+      u16(T.allMembers!), eq(), open(), uintVal(0), uintVal(1), close(),
+      close(),
+    );
+    const r = new TokenReader(data);
+    const subjects: Record<string, Set<string>> = {};
+    readIOEntry(r, { 0: "ENG", 1: "SCO" }, subjects, new Set());
+    expect(subjects["ENG"]).toEqual(new Set(["SCO"]));
+  });
+
+  it("ignores non-lordship IO types", () => {
+    const data = bytes(
+      u16(T.TYPE_ENGINE), eq(), quotedStr("hre"),
       u16(T.leader!), eq(), uintVal(0),
       close(),
     );
