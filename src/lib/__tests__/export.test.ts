@@ -50,11 +50,11 @@ describe("exportMapChartConfig", () => {
     const config = exportMapChartConfig(save, provinceMapping, { playersOnly: true });
     const labels = Object.values(config.groups).map((g) => g.label);
     expect(labels).toContain("ENG - Alice");
-    expect(labels).toContain("ENG - vassals and fiefdoms");
+    expect(labels).toContain("ENG - subjects");
 
     // Vassal color should be lighter than parent
     const vassalGroup = Object.entries(config.groups).find(
-      ([, g]) => g.label === "ENG - vassals and fiefdoms",
+      ([, g]) => g.label === "ENG - subjects",
     );
     expect(vassalGroup).toBeDefined();
     // #ff0000 lightened 2/3 toward white = #ffaaaa
@@ -105,6 +105,6 @@ describe("exportMapChartConfig", () => {
     });
     const config = exportMapChartConfig(save, provinceMapping, { playersOnly: true });
     const labels = Object.values(config.groups).map((g) => g.label);
-    expect(labels).not.toContain("ENG - vassals and fiefdoms");
+    expect(labels).not.toContain("ENG - subjects");
   });
 });

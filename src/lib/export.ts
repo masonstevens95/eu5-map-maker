@@ -52,7 +52,7 @@ export function exportMapChartConfig(
       if (vassalLocs.length > 0) {
         const vassalKey = `${overlordTag}_vassals`;
         countryLocations[vassalKey] = vassalLocs;
-        tagLabels[vassalKey] = `${overlordTag} - vassals and fiefdoms`;
+        tagLabels[vassalKey] = `${overlordTag} - subjects`;
         if (countryColors[overlordTag]) {
           countryColors[vassalKey] = lightenColor(countryColors[overlordTag], 2 / 3);
         }
