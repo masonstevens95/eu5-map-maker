@@ -173,14 +173,18 @@ export class TokenReader {
 
   /** Read and discard one value (consumes the type token + payload). */
   skipValue(): void {
-    if (this.done) return;
-    const tok = this.readToken();
-    if (tok === BinaryToken.OPEN) {
-      this.skipBlock();
-    } else if (isValueToken(tok)) {
-      this.skipValuePayload(tok);
+    if (this.done) {
+      return;
+    } else {
+      const tok = this.readToken();
+      if (tok === BinaryToken.OPEN) {
+        this.skipBlock();
+      } else if (isValueToken(tok)) {
+        this.skipValuePayload(tok);
+      } else {
+        // bare token reference — no payload to skip
+      }
     }
-    // else: it's a bare token reference (no payload)
   }
 
   /** Skip from just after an OPEN `{` to the matching CLOSE `}`. */
@@ -196,28 +200,33 @@ export class TokenReader {
         // no payload
       } else if (isValueToken(tok)) {
         this.skipValuePayload(tok);
+      } else {
+        // bare token reference — no payload to skip
       }
-      // else: bare token reference, no payload
     }
   }
 
   /** Consume an EQUAL token. Returns true if found, false otherwise. */
   expectEqual(): boolean {
-    if (this.done) return false;
-    if (this.peekToken() === BinaryToken.EQUAL) {
+    if (this.done) {
+      return false;
+    } else if (this.peekToken() === BinaryToken.EQUAL) {
       this.pos += 2;
       return true;
+    } else {
+      return false;
     }
-    return false;
   }
 
   /** Consume an OPEN `{` token. Returns true if found, false otherwise. */
   expectOpen(): boolean {
-    if (this.done) return false;
-    if (this.peekToken() === BinaryToken.OPEN) {
+    if (this.done) {
+      return false;
+    } else if (this.peekToken() === BinaryToken.OPEN) {
       this.pos += 2;
       return true;
+    } else {
+      return false;
     }
-    return false;
   }
 }

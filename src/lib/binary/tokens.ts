@@ -20,8 +20,21 @@ export const BinaryToken = {
 /** Set of all built-in token codes (not field names). */
 export const BUILTIN_TOKENS = new Set(Object.values(BinaryToken));
 
+/** Check whether a token code falls in the FIXED5 range (0x0D48-0x0D55). */
+export const isFixed5Token = (tok: number): boolean =>
+  tok >= 0x0d48 && tok <= 0x0d55;
+
+/** Get the byte size of a FIXED5 token's payload (1-7 bytes).
+ *  Unsigned (0x0D48-0x0D4E) and signed (0x0D4F-0x0D55) share the same sizing logic. */
+export const fixed5PayloadSize = (tok: number): number =>
+  tok >= 0x0d48 && tok <= 0x0d4e
+    ? tok - 0x0d48 + 1
+    : tok >= 0x0d4f && tok <= 0x0d55
+      ? tok - 0x0d4f + 1
+      : 0;
+
 /** Check whether a token code is a value type (not a structural or name token). */
-export function isValueToken(tok: number): boolean {
+export const isValueToken = (tok: number): boolean => {
   switch (tok) {
     case BinaryToken.I32:
     case BinaryToken.F32:
@@ -37,14 +50,12 @@ export function isValueToken(tok: number): boolean {
     case BinaryToken.LOOKUP_U24:
       return true;
     default:
-      // FIXED5 types: 0x0D48-0x0D55
-      if (tok >= 0x0d48 && tok <= 0x0d55) return true;
-      return false;
+      return isFixed5Token(tok) ? true : false;
   }
-}
+};
 
 /** Get the byte size of a value token's payload (excluding the 2-byte token itself). */
-export function valuePayloadSize(tok: number, data: Uint8Array, pos: number): number {
+export const valuePayloadSize = (tok: number, data: Uint8Array, pos: number): number => {
   switch (tok) {
     case BinaryToken.I32:
     case BinaryToken.F32:
@@ -64,15 +75,14 @@ export function valuePayloadSize(tok: number, data: Uint8Array, pos: number): nu
       return 3;
     case BinaryToken.QUOTED:
     case BinaryToken.UNQUOTED: {
-      if (pos + 2 > data.length) return 0;
-      const len = data[pos] | (data[pos + 1] << 8);
-      return 2 + len;
+      if (pos + 2 > data.length) {
+        return 0;
+      } else {
+        const len = data[pos] | (data[pos + 1] << 8);
+        return 2 + len;
+      }
     }
     default:
-      // FIXED5 unsigned (0x0D48-0x0D4E): 1-7 byte payloads
-      if (tok >= 0x0d48 && tok <= 0x0d4e) return tok - 0x0d48 + 1;
-      // FIXED5 signed (0x0D4F-0x0D55): 1-7 byte payloads
-      if (tok >= 0x0d4f && tok <= 0x0d55) return tok - 0x0d4f + 1;
-      return 0;
+      return isFixed5Token(tok) ? fixed5PayloadSize(tok) : 0;
   }
-}
+};

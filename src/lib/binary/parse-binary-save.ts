@@ -4,6 +4,9 @@
  * Extracts only the data needed for map generation directly from the
  * binary gamestate, skipping ~90% of the file. Uses ~50MB RAM instead
  * of ~500MB for the text melting approach.
+ *
+ * Written in FP style: const bindings, arrow functions, no exceptions,
+ * no null, every if has an else.
  */
 
 import { unzipSync } from "fflate";
@@ -19,31 +22,98 @@ import { readPlayedCountry } from "./sections/players";
 import { findDependencies } from "./sections/dependencies";
 import type { ParsedSave, RGB } from "../types";
 
+// ---------------------------------------------------------------------------
+// Pure helpers
+// ---------------------------------------------------------------------------
+
+/** Sentinel value returned when a numeric lookup has no entry. */
+const NO_CAPITAL = -1;
+
+/** Returns a fresh empty ParsedSave (no shared mutable state). */
+const emptyParsedSave = (): ParsedSave => ({
+  countryLocations: {},
+  tagToPlayers: {},
+  countryColors: {},
+  overlordSubjects: {},
+});
+
 /**
- * Parse a binary .eu5 save directly into a ParsedSave.
- * Expects the raw file bytes (including the SAV header + ZIP).
+ * Scan raw file bytes for the PK (ZIP) magic number.
+ * Returns the byte offset, or -1 if not found.
  */
-export function parseBinarySave(fileData: Uint8Array): ParsedSave {
-  let pkOffset = -1;
+const findZipOffset = (fileData: Uint8Array): number => {
   for (let i = 0; i < fileData.length - 1; i++) {
     if (fileData[i] === 0x50 && fileData[i + 1] === 0x4b) {
-      pkOffset = i;
-      break;
+      return i;
+    } else {
+      // not a match — keep scanning
     }
   }
-  if (pkOffset === -1) throw new Error("No ZIP data found in save file");
+  return -1;
+};
 
-  const files = unzipSync(fileData.subarray(pkOffset));
-  const gamestate = files["gamestate"];
-  const stringLookup = files["string_lookup"];
-  if (!gamestate) throw new Error("No gamestate in save ZIP");
-  if (!stringLookup) throw new Error("No string_lookup in save ZIP");
+/**
+ * Resolve subjects via capital ownership.
+ * For each subject ID, if its capital is owned by a different tag,
+ * that owner becomes the overlord.
+ */
+const resolveCapitalOwnershipSubjects = (
+  subjectIds: ReadonlySet<number>,
+  countryTags: Readonly<Record<number, string>>,
+  countryCapitals: Readonly<Record<number, number>>,
+  locationOwners: Readonly<Record<number, string>>,
+  overlordSubjects: Record<string, Set<string>>,
+): void => {
+  for (const subId of subjectIds) {
+    const subTag = countryTags[subId];
+    if (!subTag) {
+      // no tag for this subject id — skip
+    } else {
+      const capLoc = countryCapitals[subId] ?? NO_CAPITAL;
+      if (capLoc === NO_CAPITAL) {
+        // no capital registered — skip
+      } else {
+        const capOwner = locationOwners[capLoc];
+        if (capOwner && capOwner !== subTag) {
+          if (!overlordSubjects[capOwner]) {
+            overlordSubjects[capOwner] = new Set();
+          } else {
+            // set already exists
+          }
+          overlordSubjects[capOwner].add(subTag);
+        } else {
+          // capital unowned or self-owned — not a subject relationship
+        }
+      }
+    }
+  }
+};
 
-  const dynStrings = parseStringLookup(stringLookup);
-  return parseGamestate(gamestate, dynStrings);
-}
+/**
+ * Build countryLocations map from locationOwners + locationNames.
+ */
+const buildCountryLocations = (
+  locationOwners: Readonly<Record<number, string>>,
+  locationNames: Readonly<Record<number, string>>,
+): Record<string, string[]> => {
+  const result: Record<string, string[]> = {};
+  for (const [locIdStr, tag] of Object.entries(locationOwners)) {
+    const name = locationNames[parseInt(locIdStr)] ?? `loc_${locIdStr}`;
+    if (!result[tag]) {
+      result[tag] = [];
+    } else {
+      // array already exists
+    }
+    result[tag].push(name);
+  }
+  return result;
+};
 
-function parseGamestate(data: Uint8Array, dynStrings: string[]): ParsedSave {
+// ---------------------------------------------------------------------------
+// Core parsers
+// ---------------------------------------------------------------------------
+
+const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
   const r = new TokenReader(data, dynStrings);
 
   const locationNames: Record<number, string> = {};
@@ -58,48 +128,88 @@ function parseGamestate(data: Uint8Array, dynStrings: string[]): ParsedSave {
 
   // Locate and parse each section by scanning for byte patterns.
   const metaOff = findSection(data, T.metadata, r);
-  if (metaOff >= 0) { r.pos = metaOff + 6; readMetadataLocations(r, locationNames); }
+  if (metaOff >= 0) {
+    r.pos = metaOff + 6;
+    readMetadataLocations(r, locationNames);
+  } else {
+    // metadata section not found — location names will be empty
+  }
 
   const countriesOff = findSection(data, T.countries, r);
-  if (countriesOff >= 0) { r.pos = countriesOff + 6; readCountries(r, countryTags, countryColors, countryCapitals, overlordCandidates); }
+  if (countriesOff >= 0) {
+    r.pos = countriesOff + 6;
+    readCountries(r, countryTags, countryColors, countryCapitals, overlordCandidates);
+  } else {
+    // countries section not found — tags/colors/capitals will be empty
+  }
 
   // (integration_owner removed — too many false positives from partial conquest)
 
   const locOff = findOwnershipLocations(data, T.locations, T.owner, r);
-  if (locOff >= 0) { r.pos = locOff + 6; readLocationOwnership(r, countryTags, locationOwners); }
+  if (locOff >= 0) {
+    r.pos = locOff + 6;
+    readLocationOwnership(r, countryTags, locationOwners);
+  } else {
+    // ownership locations not found — locationOwners will be empty
+  }
 
   // Dependencies: authoritative overlord-subject relationships
   // stored as dependency = { first=overlord second=subject subject_type=... }
   findDependencies(data, dynStrings, countryTags, overlordSubjects);
 
   const dipOff = findSection(data, T.diplomacyMgr, r);
-  if (dipOff >= 0) { r.pos = dipOff + 6; readDiplomacy(r, subjectIds); }
+  if (dipOff >= 0) {
+    r.pos = dipOff + 6;
+    readDiplomacy(r, subjectIds);
+  } else {
+    // diplomacy section not found — subjectIds will be empty
+  }
 
   for (const off of findAllMatches(data, T.playedCountry)) {
     r.pos = off + 6;
     readPlayedCountry(r, countryTags, tagToPlayers);
   }
 
-  // Resolve subjects via capital ownership
-  for (const subId of subjectIds) {
-    const subTag = countryTags[subId];
-    if (!subTag) continue;
-    const capLoc = countryCapitals[subId];
-    if (capLoc === undefined) continue;
-    const capOwner = locationOwners[capLoc];
-    if (capOwner && capOwner !== subTag) {
-      if (!overlordSubjects[capOwner]) overlordSubjects[capOwner] = new Set();
-      overlordSubjects[capOwner].add(subTag);
-    }
-  }
+  resolveCapitalOwnershipSubjects(subjectIds, countryTags, countryCapitals, locationOwners, overlordSubjects);
 
-  // Build countryLocations from locationOwners + locationNames
-  const countryLocations: Record<string, string[]> = {};
-  for (const [locIdStr, tag] of Object.entries(locationOwners)) {
-    const name = locationNames[parseInt(locIdStr)] ?? `loc_${locIdStr}`;
-    if (!countryLocations[tag]) countryLocations[tag] = [];
-    countryLocations[tag].push(name);
-  }
+  const countryLocations = buildCountryLocations(locationOwners, locationNames);
 
   return { countryLocations, tagToPlayers, countryColors, overlordSubjects };
-}
+};
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/**
+ * Parse a binary .eu5 save directly into a ParsedSave.
+ * Expects the raw file bytes (including the SAV header + ZIP).
+ * Returns an empty ParsedSave on any structural failure (no exceptions).
+ */
+export const parseBinarySave = (fileData: Uint8Array): ParsedSave => {
+  const pkOffset = findZipOffset(fileData);
+  if (pkOffset === -1) {
+    return emptyParsedSave();
+  } else {
+    // found ZIP data — proceed
+  }
+
+  const files = unzipSync(fileData.subarray(pkOffset));
+  const gamestate = files["gamestate"];
+  const stringLookup = files["string_lookup"];
+
+  if (!gamestate) {
+    return emptyParsedSave();
+  } else {
+    // gamestate present
+  }
+
+  if (!stringLookup) {
+    return emptyParsedSave();
+  } else {
+    // string_lookup present
+  }
+
+  const dynStrings = parseStringLookup(stringLookup);
+  return parseGamestate(gamestate, dynStrings);
+};

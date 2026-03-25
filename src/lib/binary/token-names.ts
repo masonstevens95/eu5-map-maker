@@ -16,15 +16,15 @@ for (const [idStr, name] of Object.entries(tokenMap)) {
   // Only store the first ID for each name (some names have multiple IDs)
   if (!nameToId.has(name as string)) {
     nameToId.set(name as string, id);
+  } else {
+    /* duplicate name — keep the first mapping */
   }
 }
 
 /** Look up the token ID for a known field name. Returns undefined if not found. */
-export function tokenId(name: string): number | undefined {
-  return nameToId.get(name);
-}
+export const tokenId = (name: string): number | undefined =>
+  nameToId.get(name);
 
 /** Look up the field name for a token ID. Returns undefined if not found. */
-export function tokenName(id: number): string | undefined {
-  return idToName.get(id);
-}
+export const tokenName = (id: number): string | undefined =>
+  idToName.get(id);
