@@ -36,8 +36,12 @@ const T = {
   name:         tokenId("name"),
   country:      tokenId("country"),
   subjectTax:   tokenId("last_months_subject_tax"),
-  rgb:          tokenId("rgb"),
   mapColor:     tokenId("map_color"),
+  // Engine tokens below 0x0270c — not in the game token mapping file
+  COLOR:        0x0056,   // "color" field
+  RGB:          0x0243,   // RGB color marker: 0x0243 { U32 U32 U32 }
+  TYPE_ENGINE:  0x00e1,   // "type" field in IO entries
+  NAME_ENGINE:  0x001b,   // "name" field in played_country
 };
 
 /**
@@ -416,11 +420,11 @@ function readCountryEntry(
     if (tok === T.flag) {
       r.expectEqual();
       currentFlag = r.readStringValue();
-    } else if ((tok === T.color || tok === T.mapColor) && currentFlag) {
+    } else if ((tok === T.COLOR || tok === T.mapColor) && currentFlag) {
       r.expectEqual();
-      // color = rgb { R G B } — "rgb" is a token, then { R G B }
-      r.readToken(); // rgb token (or other color format)
-      if (r.peekToken() === BinaryToken.OPEN) {
+      // color = RGB { U32 U32 U32 } — RGB marker (0x0243) then { R G B }
+      const colorMarker = r.readToken();
+      if (colorMarker === T.RGB && r.peekToken() === BinaryToken.OPEN) {
         r.readToken(); // {
         const rv = r.readIntValue();
         const gv = r.readIntValue();
@@ -428,10 +432,7 @@ function readCountryEntry(
         if (rv !== null && gv !== null && bv !== null) {
           countryColors[currentFlag] = [rv, gv, bv];
         }
-        // consume remaining values and }
-        while (!r.done && r.peekToken() !== BinaryToken.CLOSE) {
-          r.skipValue();
-        }
+        while (!r.done && r.peekToken() !== BinaryToken.CLOSE) r.skipValue();
         if (!r.done) r.readToken(); // }
       }
     } else if (tok === T.capital) {
@@ -507,26 +508,18 @@ function readLocationEntry(
   countryTags: Record<number, string>,
   locationOwners: Record<number, string>,
 ): void {
-  let depth = 1;
-  let found = false;
-  while (!r.done && depth > 0) {
-    const tok = r.readToken();
-    if (tok === BinaryToken.CLOSE) { depth--; continue; }
-    if (tok === BinaryToken.OPEN) { depth++; continue; }
-    if (tok === BinaryToken.EQUAL) continue;
-
-    if (tok === T.owner && depth === 1 && !found) {
-      r.expectEqual();
-      const ownerId = r.readIntValue();
-      if (ownerId !== null && countryTags[ownerId]) {
-        locationOwners[locId] = countryTags[ownerId];
-        found = true;
-      }
-    } else if (depth === 1 && r.peekToken() === BinaryToken.EQUAL) {
-      r.readToken();
-      r.skipValue();
+  // Read owner= (always the first field), then skip the rest of the block
+  const firstTok = r.peekToken();
+  if (firstTok === T.owner) {
+    r.readToken(); // owner
+    r.expectEqual();
+    const ownerId = r.readIntValue();
+    if (ownerId !== null && countryTags[ownerId]) {
+      locationOwners[locId] = countryTags[ownerId];
     }
   }
+  // Skip remaining fields in this location block
+  r.skipBlock();
 }
 
 /** Read IO manager for type=loc subject relationships. */
@@ -599,7 +592,7 @@ function readIOEntry(
 
     if (depth !== 1) continue;
 
-    if (tok === T.type) {
+    if (tok === T.type || tok === T.TYPE_ENGINE) {
       r.expectEqual();
       ioType = r.readToken(); // type value is a token reference
     } else if (tok === T.leader) {
@@ -700,7 +693,7 @@ function readPlayedCountry(
 
     if (depth !== 1) continue;
 
-    if (tok === T.name) {
+    if (tok === T.name || tok === T.NAME_ENGINE) {
       r.expectEqual();
       playerName = r.readStringValue();
     } else if (tok === T.country) {

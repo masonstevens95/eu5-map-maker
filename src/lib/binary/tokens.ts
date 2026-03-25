@@ -37,6 +37,8 @@ export function isValueToken(tok: number): boolean {
     case BinaryToken.LOOKUP_U24:
       return true;
     default:
+      // FIXED5 types: 0x0D48-0x0D55
+      if (tok >= 0x0d48 && tok <= 0x0d55) return true;
       return false;
   }
 }
@@ -67,6 +69,10 @@ export function valuePayloadSize(tok: number, data: Uint8Array, pos: number): nu
       return 2 + len;
     }
     default:
+      // FIXED5 unsigned (0x0D48-0x0D4E): 1-7 byte payloads
+      if (tok >= 0x0d48 && tok <= 0x0d4e) return tok - 0x0d48 + 1;
+      // FIXED5 signed (0x0D4F-0x0D55): 1-7 byte payloads
+      if (tok >= 0x0d4f && tok <= 0x0d55) return tok - 0x0d4f + 1;
       return 0;
   }
 }
