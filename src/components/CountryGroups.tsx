@@ -9,7 +9,7 @@ export function CountryGroups({ groups }: CountryGroupsProps) {
     <div className="country-list">
       <h3>Country Groups</h3>
       <div className="group-grid">
-        {Object.entries(groups).map(([hex, group]) => (
+        {Object.entries(groups).sort((a, b) => a[1].label.localeCompare(b[1].label)).map(([hex, group]) => (
           <div key={hex} className="group-card">
             <div className="color-swatch" style={{ backgroundColor: hex }} />
             <div className="group-info">

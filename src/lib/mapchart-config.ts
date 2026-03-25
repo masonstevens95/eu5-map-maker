@@ -9,9 +9,11 @@ export function generateMapChartConfig(
   options: { title?: string; tagLabels?: Record<string, string> } = {},
 ): MapChartConfig {
   const countryProvinces = mapToProvinces(countryLocations, locToProvince);
-  const tags = Object.keys(countryProvinces).sort(
-    (a, b) => (countryProvinces[b]?.length ?? 0) - (countryProvinces[a]?.length ?? 0),
-  );
+  const tags = Object.keys(countryProvinces).sort((a, b) => {
+    const labelA = options.tagLabels?.[a] ?? a;
+    const labelB = options.tagLabels?.[b] ?? b;
+    return labelA.localeCompare(labelB);
+  });
 
   const colors = { ...countryColors };
   const missingTags = tags.filter((t) => !colors[t]);

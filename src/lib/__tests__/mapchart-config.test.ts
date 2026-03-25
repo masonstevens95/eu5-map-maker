@@ -84,15 +84,15 @@ describe("generateMapChartConfig", () => {
     expect(config.title).toBe("My Map");
   });
 
-  it("sorts groups by province count descending", () => {
+  it("sorts groups alphabetically by label", () => {
     const config = generateMapChartConfig(
-      { SMALL: ["stockholm"], BIG: ["paris", "london"] },
-      { SMALL: [255, 0, 0], BIG: [0, 255, 0] },
+      { ZZZ: ["stockholm"], AAA: ["paris", "london"] },
+      { ZZZ: [255, 0, 0], AAA: [0, 255, 0] },
       locToProvince,
     );
     const labels = Object.values(config.groups).map((g) => g.label);
-    expect(labels[0]).toBe("BIG");
-    expect(labels[1]).toBe("SMALL");
+    expect(labels[0]).toBe("AAA");
+    expect(labels[1]).toBe("ZZZ");
   });
 
   it("returns config with no groups for empty input", () => {
