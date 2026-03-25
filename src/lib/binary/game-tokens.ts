@@ -29,6 +29,7 @@ export const T = {
   country:       tokenId("country"),
   subjectTax:    tokenId("last_months_subject_tax"),
   mapColor:      tokenId("map_color"),
+  integrationOwner: tokenId("integration_owner"),
 
   // Engine tokens (below 0x0270c) — not in the game token mapping file
   COLOR:         0x0056,  // "color" field

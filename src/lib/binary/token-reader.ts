@@ -10,6 +10,10 @@ import { BinaryToken, isValueToken, valuePayloadSize } from "./tokens";
 export class TokenReader {
   private view: DataView;
   private data: Uint8Array;
+
+  /** Raw access to underlying data for byte-level scanning. */
+  get rawData(): Uint8Array { return this.data; }
+  get rawView(): DataView { return this.view; }
   private decoder = new TextDecoder("utf-8");
   pos: number;
 

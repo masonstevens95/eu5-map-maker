@@ -205,6 +205,31 @@ describe("readLocationEntries", () => {
     expect(owners).toEqual({ 1: "SWE", 2: "FRA" });
   });
 
+  it("extracts integration_owner for fiefdom detection", () => {
+    const OWNER = T.owner!;
+    const IO_TOK = T.integrationOwner!;
+    const ioLo = IO_TOK & 0xff, ioHi = (IO_TOK >> 8) & 0xff;
+    // Location 1: owner=1 (SCO), integration_owner=0 (ENG) via raw bytes
+    const data = bytes(
+      u16(BinaryToken.I32), [1, 0, 0, 0], eq(), open(),
+        u16(OWNER), eq(), uintVal(1),
+        // Some nested content with integration_owner embedded
+        u16(0x2f8a), eq(), open(), // integration = {
+          [ioLo, ioHi], eq(), uintVal(0), // integration_owner = 0 (ENG)
+        close(),
+      close(),
+      close(), // end of block
+    );
+    const r = new TokenReader(data);
+    const tags = { 0: "ENG", 1: "SCO" };
+    const owners: Record<number, string> = {};
+    const intOwners = new Map<number, Set<number>>();
+    readLocationEntries(r, tags, owners, intOwners);
+    expect(owners[1]).toBe("SCO");
+    // ENG (0) should be recorded as overlord of SCO (1)
+    expect(intOwners.get(0)?.has(1)).toBe(true);
+  });
+
   it("skips entries with unknown owner", () => {
     const OWNER = T.owner!;
     const data = bytes(

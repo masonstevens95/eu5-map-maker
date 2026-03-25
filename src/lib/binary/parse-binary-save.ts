@@ -64,8 +64,12 @@ function parseGamestate(data: Uint8Array, dynStrings: string[]): ParsedSave {
   const countriesOff = findSection(data, T.countries, r);
   if (countriesOff >= 0) { r.pos = countriesOff + 6; readCountries(r, countryTags, countryColors, countryCapitals, overlordCandidates); }
 
+  // integrationOwners: maps overlord_country_id -> set of subject_country_ids
+  // derived from locations where integration_owner != owner
+  const integrationOwners = new Map<number, Set<number>>();
+
   const locOff = findOwnershipLocations(data, T.locations, T.owner, r);
-  if (locOff >= 0) { r.pos = locOff + 6; readLocationOwnership(r, countryTags, locationOwners); }
+  if (locOff >= 0) { r.pos = locOff + 6; readLocationOwnership(r, countryTags, locationOwners, integrationOwners); }
 
   const ioOff = findSection(data, T.ioManager, r);
   if (ioOff >= 0) { r.pos = ioOff + 6; readIOManager(r, countryTags, overlordSubjects, ioMatched); }
@@ -88,6 +92,18 @@ function parseGamestate(data: Uint8Array, dynStrings: string[]): ParsedSave {
     if (capOwner && capOwner !== subTag) {
       if (!overlordSubjects[capOwner]) overlordSubjects[capOwner] = new Set();
       overlordSubjects[capOwner].add(subTag);
+    }
+  }
+
+  // Add subjects from integration_owner (fiefdoms/vassals tracked per-location)
+  for (const [overlordId, subjectIds] of integrationOwners) {
+    const overlordTag = countryTags[overlordId];
+    if (!overlordTag) continue;
+    for (const subId of subjectIds) {
+      const subTag = countryTags[subId];
+      if (!subTag) continue;
+      if (!overlordSubjects[overlordTag]) overlordSubjects[overlordTag] = new Set();
+      overlordSubjects[overlordTag].add(subTag);
     }
   }
 
