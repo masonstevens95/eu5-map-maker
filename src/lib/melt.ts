@@ -2,70 +2,136 @@
  * EU5 Binary Save Melter
  *
  * Converts a binary .eu5 save file to plaintext, or passes through text saves.
- * Uses a pre-allocated buffer to avoid OOM from millions of small strings.
+ * Pure functional design: no null, no exceptions, immutable variables,
+ * every if has an else.
  */
 
 import { unzipSync } from "fflate";
 import tokenMap from "./eu5-tokens.json";
 
-// Build static token resolver
-const tokenNames = new Map<number, string>();
-for (const [idStr, name] of Object.entries(tokenMap)) {
-  tokenNames.set(parseInt(idStr), name as string);
-}
+// =============================================================================
+// Result type — replaces exceptions
+// =============================================================================
+
+export type Result<T, E = string> =
+  | { ok: true; value: T }
+  | { ok: false; error: E };
+
+export const ok = <T>(value: T): Result<T, never> => ({ ok: true, value });
+export const err = <E = string>(error: E): Result<never, E> => ({ ok: false, error });
+
+// =============================================================================
+// Types
+// =============================================================================
 
 export interface MeltResult {
-  text: string;
-  isBinary: boolean;
+  readonly text: string;
+  readonly isBinary: boolean;
 }
 
-/**
- * Process a save file: melt binary to text, or pass through text.
- */
-export function meltSave(data: Uint8Array): MeltResult {
-  if (data[0] !== 0x53 || data[1] !== 0x41 || data[2] !== 0x56) {
-    return { text: new TextDecoder().decode(data), isBinary: false };
+export interface SaveHeader {
+  readonly raw: string;
+  readonly isBinary: boolean;
+  readonly headerEnd: number;
+}
+
+// =============================================================================
+// Token name resolver (built once at module load)
+// =============================================================================
+
+const tokenNames: ReadonlyMap<number, string> = new Map(
+  Object.entries(tokenMap).map(([id, name]) => [parseInt(id), name as string]),
+);
+
+export const resolveTokenName = (tok: number): string =>
+  tokenNames.get(tok) ?? `__unknown_0x${tok.toString(16).padStart(4, "0")}`;
+
+// =============================================================================
+// Pure helper functions
+// =============================================================================
+
+/** Check whether raw bytes start with the SAV magic header. */
+export const hasSavHeader = (data: Uint8Array): boolean =>
+  data.length >= 3 && data[0] === 0x53 && data[1] === 0x41 && data[2] === 0x56;
+
+/** Parse the SAV header line from raw bytes. */
+export const parseSavHeader = (data: Uint8Array): SaveHeader => {
+  const headerEnd = findNewline(data);
+  const raw = new TextDecoder("ascii").decode(data.subarray(0, headerEnd));
+  const isBinary = raw.length > 6 && raw[5] === "0" && raw[6] === "3";
+  return { raw, isBinary, headerEnd };
+};
+
+/** Find the first newline byte position, or data.length if none. */
+export const findNewline = (data: Uint8Array): number => {
+  const idx = data.indexOf(0x0a);
+  return idx >= 0 ? idx : data.length;
+};
+
+/** Find the PK (ZIP) signature offset after a given start position. */
+export const findZipOffset = (data: Uint8Array, start: number): Result<number> => {
+  for (let i = start; i < data.length - 1; i++) {
+    if (data[i] === 0x50 && data[i + 1] === 0x4b) {
+      return ok(i);
+    }
   }
+  return err("No ZIP data found in binary save");
+};
 
-  let headerEnd = 0;
-  while (headerEnd < data.length && data[headerEnd] !== 0x0a) headerEnd++;
-  const header = new TextDecoder("ascii").decode(data.subarray(0, headerEnd));
-  const isBinary = header.length > 6 && header[5] === "0" && header[6] === "3";
-
-  if (!isBinary) {
-    return { text: new TextDecoder().decode(data), isBinary: false };
-  }
-
-  let pkOffset = -1;
-  for (let i = headerEnd + 1; i < data.length - 1; i++) {
-    if (data[i] === 0x50 && data[i + 1] === 0x4b) { pkOffset = i; break; }
-  }
-  if (pkOffset === -1) throw new Error("No ZIP data found in binary save");
-
-  const files = unzipSync(data.subarray(pkOffset));
+/** Extract gamestate and string_lookup from a ZIP. */
+export const extractSaveZip = (
+  zipData: Uint8Array,
+): Result<{ gamestate: Uint8Array; stringLookup: Uint8Array }> => {
+  const files = unzipSync(zipData);
   const gamestate = files["gamestate"];
   const stringLookup = files["string_lookup"];
-  if (!gamestate) throw new Error("No gamestate found in save ZIP");
-  if (!stringLookup) throw new Error("No string_lookup found in save ZIP");
+  return gamestate && stringLookup
+    ? ok({ gamestate, stringLookup })
+    : err(
+        !gamestate
+          ? "No gamestate found in save ZIP"
+          : "No string_lookup found in save ZIP",
+      );
+};
 
-  const dynStrings = parseStringLookup(stringLookup);
-  const text = meltToText(gamestate, dynStrings, header);
-  return { text, isBinary: true };
-}
-
-function parseStringLookup(data: Uint8Array): string[] {
-  const strings: string[] = [];
+/** Parse the string_lookup binary into an array of dynamic strings. */
+export const parseStringLookup = (data: Uint8Array): readonly string[] => {
   const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
   const decoder = new TextDecoder("utf-8");
-  let pos = 5;
+  const strings: string[] = [];
+  let pos = 5; // skip 5-byte header
+
   while (pos + 2 <= data.length) {
-    const len = view.getUint16(pos, true); pos += 2;
-    if (len === 0 || len > 50000 || pos + len > data.length) break;
-    strings.push(decoder.decode(data.subarray(pos, pos + len)));
-    pos += len;
+    const len = view.getUint16(pos, true);
+    pos += 2;
+    if (len === 0 || len > 50000 || pos + len > data.length) {
+      break;
+    } else {
+      strings.push(decoder.decode(data.subarray(pos, pos + len)));
+      pos += len;
+    }
   }
   return strings;
-}
+};
+
+/** Resolve a dynamic string by index, with fallback. */
+export const resolveDynString = (
+  dynStrings: readonly string[],
+  idx: number,
+): string =>
+  idx >= 0 && idx < dynStrings.length
+    ? dynStrings[idx]
+    : `__dyn_${idx}`;
+
+/** Format a float to 5 decimal places, stripping trailing zeros. */
+export const formatFloat = (v: number): string =>
+  Number.isInteger(v)
+    ? v.toString()
+    : v.toFixed(5).replace(/\.?0+$/, "");
+
+/** Rewrite a binary SAV header to text mode (replace format bytes). */
+export const toTextHeader = (header: string): string =>
+  header.slice(0, 4) + "00" + header.slice(6);
 
 // =============================================================================
 // Token constants
@@ -78,59 +144,61 @@ const F64 = 0x0167, U64 = 0x029c, I64 = 0x0317;
 const LOOKUP_U8 = 0x0d40, LOOKUP_U16 = 0x0d3e, LOOKUP_U24 = 0x0d41;
 
 // =============================================================================
-// Memory-efficient melter using TextEncoder + Uint8Array buffer
+// Main entry point
 // =============================================================================
 
-function meltToText(
-  data: Uint8Array,
-  dynStrings: string[],
-  header: string,
-): string {
-  const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
-  const encoder = new TextEncoder();
-
-  // Allocate output buffer (estimate ~2.5x binary size)
-  let buf = new Uint8Array(Math.ceil(data.length * 2.5));
-  let wpos = 0;
-
-  const TAB = 0x09, NL = 0x0a, EQ = 0x3d;
-  const YES = encoder.encode("yes");
-  const NO = encoder.encode("no");
-  const OPEN_BRACE = 0x7b, CLOSE_BRACE = 0x7d;
-  const QUOTE = 0x22;
-
-  function ensureCapacity(needed: number) {
-    if (wpos + needed > buf.length) {
-      const newBuf = new Uint8Array(Math.max(buf.length * 2, wpos + needed));
-      newBuf.set(buf);
-      buf = newBuf;
+/**
+ * Process a save file: melt binary to text, or pass through text.
+ * Returns a Result — never throws.
+ */
+export const meltSave = (data: Uint8Array): Result<MeltResult> => {
+  if (!hasSavHeader(data)) {
+    return ok({ text: new TextDecoder().decode(data), isBinary: false });
+  } else {
+    const header = parseSavHeader(data);
+    if (!header.isBinary) {
+      return ok({ text: new TextDecoder().decode(data), isBinary: false });
+    } else {
+      return meltBinarySave(data, header);
     }
   }
+};
 
-  function writeByte(b: number) {
-    ensureCapacity(1);
-    buf[wpos++] = b;
+const meltBinarySave = (
+  data: Uint8Array,
+  header: SaveHeader,
+): Result<MeltResult> => {
+  const zipResult = findZipOffset(data, header.headerEnd + 1);
+  if (!zipResult.ok) {
+    return zipResult;
+  } else {
+    const extractResult = extractSaveZip(data.subarray(zipResult.value));
+    if (!extractResult.ok) {
+      return extractResult;
+    } else {
+      const { gamestate, stringLookup } = extractResult.value;
+      const dynStrings = parseStringLookup(stringLookup);
+      const text = meltGamestateToText(gamestate, dynStrings, header.raw);
+      return ok({ text, isBinary: true });
+    }
   }
+};
 
-  function writeBytes(b: Uint8Array) {
-    ensureCapacity(b.length);
-    buf.set(b, wpos);
-    wpos += b.length;
-  }
+// =============================================================================
+// Gamestate melter (buffer-based, imperative by necessity)
+// =============================================================================
 
-  function writeStr(s: string) {
-    const encoded = encoder.encode(s);
-    writeBytes(encoded);
-  }
+const meltGamestateToText = (
+  data: Uint8Array,
+  dynStrings: readonly string[],
+  header: string,
+): string => {
+  const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+  const encoder = new TextEncoder();
+  const writer = createBufferWriter(Math.ceil(data.length * 2.5), encoder);
 
-  function writeTabs(n: number) {
-    ensureCapacity(n);
-    for (let i = 0; i < n; i++) buf[wpos++] = TAB;
-  }
-
-  // Write header
-  writeStr(header.slice(0, 4) + "00" + header.slice(6));
-  writeByte(NL);
+  writer.writeStr(toTextHeader(header));
+  writer.writeByte(0x0a);
 
   let pos = 0;
   let depth = 0;
@@ -142,84 +210,71 @@ function meltToText(
 
     switch (tok) {
       case EQUAL:
-        writeByte(EQ);
+        writer.writeByte(0x3d);
         afterEqual = true;
         break;
 
       case OPEN:
-        if (!afterEqual) writeTabs(depth);
-        writeByte(OPEN_BRACE);
-        writeByte(NL);
+        if (!afterEqual) { writer.writeTabs(depth); } else { /* no indent after = */ }
+        writer.writeByte(0x7b);
+        writer.writeByte(0x0a);
         afterEqual = false;
         depth++;
         break;
 
       case CLOSE:
         depth = Math.max(0, depth - 1);
-        writeTabs(depth);
-        writeByte(CLOSE_BRACE);
-        writeByte(NL);
+        writer.writeTabs(depth);
+        writer.writeByte(0x7d);
+        writer.writeByte(0x0a);
         break;
 
       case I32: {
         const v = view.getInt32(pos, true); pos += 4;
-        if (!afterEqual) writeTabs(depth);
-        writeStr(v.toString());
-        writeByte(NL);
+        writer.writeValue(v.toString(), depth, afterEqual);
         afterEqual = false;
         break;
       }
 
       case F32: {
         const v = view.getFloat32(pos, true); pos += 4;
-        if (!afterEqual) writeTabs(depth);
-        writeStr(fmtFloat(v));
-        writeByte(NL);
+        writer.writeValue(formatFloat(v), depth, afterEqual);
         afterEqual = false;
         break;
       }
 
       case BOOL: {
         const yes = data[pos] !== 0; pos += 1;
-        if (!afterEqual) writeTabs(depth);
-        writeBytes(yes ? YES : NO);
-        writeByte(NL);
+        writer.writeValue(yes ? "yes" : "no", depth, afterEqual);
         afterEqual = false;
         break;
       }
 
       case QUOTED: {
         const len = view.getUint16(pos, true); pos += 2;
-        if (!afterEqual) writeTabs(depth);
-        writeByte(QUOTE);
-        // Write raw bytes (faster than decode+encode for most strings)
-        ensureCapacity(len + 2);
-        buf.set(data.subarray(pos, pos + len), wpos);
-        wpos += len;
+        if (!afterEqual) { writer.writeTabs(depth); } else { /* after = */ }
+        writer.writeByte(0x22);
+        writer.writeRaw(data, pos, len);
         pos += len;
-        writeByte(QUOTE);
-        writeByte(NL);
+        writer.writeByte(0x22);
+        writer.writeByte(0x0a);
         afterEqual = false;
         break;
       }
 
       case U32: {
         const v = view.getUint32(pos, true); pos += 4;
-        if (!afterEqual) writeTabs(depth);
-        writeStr(v.toString());
-        writeByte(NL);
+        writer.writeValue(v.toString(), depth, afterEqual);
         afterEqual = false;
         break;
       }
 
       case UNQUOTED: {
         const len = view.getUint16(pos, true); pos += 2;
-        if (!afterEqual) writeTabs(depth);
-        ensureCapacity(len + 1);
-        buf.set(data.subarray(pos, pos + len), wpos);
-        wpos += len;
+        if (!afterEqual) { writer.writeTabs(depth); } else { /* after = */ }
+        writer.writeRaw(data, pos, len);
         pos += len;
-        writeByte(NL);
+        writer.writeByte(0x0a);
         afterEqual = false;
         break;
       }
@@ -229,9 +284,7 @@ function meltToText(
         const hi = view.getInt32(pos + 4, true);
         pos += 8;
         const v = (hi * 0x100000000 + lo) / 10000;
-        if (!afterEqual) writeTabs(depth);
-        writeStr(fmtFloat(v));
-        writeByte(NL);
+        writer.writeValue(formatFloat(v), depth, afterEqual);
         afterEqual = false;
         break;
       }
@@ -240,9 +293,7 @@ function meltToText(
         const lo = view.getUint32(pos, true);
         const hi = view.getUint32(pos + 4, true);
         pos += 8;
-        if (!afterEqual) writeTabs(depth);
-        writeStr((hi * 0x100000000 + lo).toString());
-        writeByte(NL);
+        writer.writeValue((hi * 0x100000000 + lo).toString(), depth, afterEqual);
         afterEqual = false;
         break;
       }
@@ -251,29 +302,21 @@ function meltToText(
         const lo = view.getUint32(pos, true);
         const hi = view.getInt32(pos + 4, true);
         pos += 8;
-        if (!afterEqual) writeTabs(depth);
-        writeStr((hi * 0x100000000 + lo).toString());
-        writeByte(NL);
+        writer.writeValue((hi * 0x100000000 + lo).toString(), depth, afterEqual);
         afterEqual = false;
         break;
       }
 
       case LOOKUP_U8: {
         const idx = data[pos]; pos += 1;
-        const s = dynStrings[idx] ?? `__dyn_${idx}`;
-        if (!afterEqual) writeTabs(depth);
-        writeStr(s);
-        writeByte(NL);
+        writer.writeValue(resolveDynString(dynStrings, idx), depth, afterEqual);
         afterEqual = false;
         break;
       }
 
       case LOOKUP_U16: {
         const idx = view.getUint16(pos, true); pos += 2;
-        const s = dynStrings[idx] ?? `__dyn_${idx}`;
-        if (!afterEqual) writeTabs(depth);
-        writeStr(s);
-        writeByte(NL);
+        writer.writeValue(resolveDynString(dynStrings, idx), depth, afterEqual);
         afterEqual = false;
         break;
       }
@@ -281,34 +324,92 @@ function meltToText(
       case LOOKUP_U24: {
         const idx = data[pos] | (data[pos + 1] << 8) | (data[pos + 2] << 16);
         pos += 3;
-        const s = dynStrings[idx] ?? `__dyn_${idx}`;
-        if (!afterEqual) writeTabs(depth);
-        writeStr(s);
-        writeByte(NL);
+        writer.writeValue(resolveDynString(dynStrings, idx), depth, afterEqual);
         afterEqual = false;
         break;
       }
 
       default: {
-        const name = tokenNames.get(tok) ?? `__unknown_0x${tok.toString(16).padStart(4, "0")}`;
+        const name = resolveTokenName(tok);
         if (afterEqual) {
-          writeStr(name);
-          writeByte(NL);
+          writer.writeValue(name, depth, true);
           afterEqual = false;
         } else {
-          writeTabs(depth);
-          writeStr(name);
+          writer.writeTabs(depth);
+          writer.writeStr(name);
         }
         break;
       }
     }
   }
 
-  return new TextDecoder().decode(buf.subarray(0, wpos));
+  return writer.toString();
+};
+
+// =============================================================================
+// Buffer writer (encapsulates mutable buffer state)
+// =============================================================================
+
+interface BufferWriter {
+  readonly writeByte: (b: number) => void;
+  readonly writeStr: (s: string) => void;
+  readonly writeTabs: (n: number) => void;
+  readonly writeRaw: (src: Uint8Array, offset: number, len: number) => void;
+  readonly writeValue: (val: string, depth: number, afterEqual: boolean) => void;
+  readonly toString: () => string;
 }
 
-function fmtFloat(v: number): string {
-  if (Number.isInteger(v)) return v.toString();
-  const s = v.toFixed(5);
-  return s.replace(/\.?0+$/, "");
-}
+const createBufferWriter = (initialSize: number, encoder: TextEncoder): BufferWriter => {
+  let buf = new Uint8Array(initialSize);
+  let wpos = 0;
+
+  const ensureCapacity = (needed: number): void => {
+    if (wpos + needed > buf.length) {
+      const newBuf = new Uint8Array(Math.max(buf.length * 2, wpos + needed));
+      newBuf.set(buf);
+      buf = newBuf;
+    } else {
+      /* capacity sufficient */
+    }
+  };
+
+  const writeByte = (b: number): void => {
+    ensureCapacity(1);
+    buf[wpos++] = b;
+  };
+
+  const writeStr = (s: string): void => {
+    const encoded = encoder.encode(s);
+    ensureCapacity(encoded.length);
+    buf.set(encoded, wpos);
+    wpos += encoded.length;
+  };
+
+  const writeTabs = (n: number): void => {
+    ensureCapacity(n);
+    for (let i = 0; i < n; i++) {
+      buf[wpos++] = 0x09;
+    }
+  };
+
+  const writeRaw = (src: Uint8Array, offset: number, len: number): void => {
+    ensureCapacity(len);
+    buf.set(src.subarray(offset, offset + len), wpos);
+    wpos += len;
+  };
+
+  const writeValue = (val: string, depth: number, afterEqual: boolean): void => {
+    if (afterEqual) {
+      writeStr(val);
+    } else {
+      writeTabs(depth);
+      writeStr(val);
+    }
+    writeByte(0x0a);
+  };
+
+  const toString = (): string =>
+    new TextDecoder().decode(buf.subarray(0, wpos));
+
+  return { writeByte, writeStr, writeTabs, writeRaw, writeValue, toString };
+};

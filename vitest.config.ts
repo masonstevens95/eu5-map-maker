@@ -10,6 +10,7 @@ export default defineConfig({
         'src/lib/types.ts',
         'src/lib/index.ts',
         'src/lib/__tests__/**',
+        
         'src/lib/melt.ts',
         'src/lib/eu5-tokens.json',
         'src/main.tsx',
