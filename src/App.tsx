@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { meltSave } from "./lib/melt";
 import { parseMeltedSave } from "./lib/save-parser";
 import { exportMapChartConfig } from "./lib/export";
 import { buildLocationToProvince } from "./lib/province-mapping";
@@ -29,27 +30,39 @@ export default function App() {
       setStatus("reading");
 
       try {
-        const text = await file.text();
-        const sizeMb = text.length / 1024 / 1024;
-
-        // Quick validation: melted saves start with "SAV0200" (text mode header)
-        const firstLine = text.split("\n")[0];
-        if (firstLine.startsWith("SAV") && firstLine[4] !== "0") {
-          setError(
-            "This looks like a binary .eu5 save. Please melt it first with:\n" +
-            "rakaly melt --format eu5 -u stringify -o melted.txt your_save.eu5\n\n" +
-            "Then upload the melted .txt file.",
-          );
-          setStatus("error");
-          return;
-        }
+        const arrayBuffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+        const sizeMb = bytes.length / 1024 / 1024;
 
         setStatus("parsing");
-
-        // Parse in a microtask to let the UI update
         await new Promise((r) => setTimeout(r, 0));
 
         const t0 = performance.now();
+
+        // Check if binary
+        const isBinarySave = bytes[0] === 0x53 && bytes[1] === 0x41 && bytes[2] === 0x56
+          && bytes.length > 7
+          && String.fromCharCode(bytes[5]) === "0" && String.fromCharCode(bytes[6]) === "3";
+
+        let text: string;
+        if (isBinarySave) {
+          try {
+            const { text: melted } = meltSave(bytes);
+            text = melted;
+          } catch {
+            setError(
+              "Binary save detected but melting failed.\n\n" +
+              "Please melt it manually with rakaly:\n" +
+              "  rakaly melt --format eu5 -u stringify -o melted.txt your_save.eu5\n\n" +
+              "Then upload the melted .txt file.",
+            );
+            setStatus("error");
+            return;
+          }
+        } else {
+          text = new TextDecoder().decode(bytes);
+        }
+
         const parsed = parseMeltedSave(text);
         const locToProvince = buildLocationToProvince(provinceMapping);
         const config = exportMapChartConfig(text, provinceMapping, {
@@ -107,7 +120,7 @@ export default function App() {
       <header className="app-header">
         <h1>EU5 Map Maker</h1>
         <p className="subtitle">
-          Upload a melted EU5 save file to generate a MapChart config
+          Upload an EU5 save file to generate a MapChart config
         </p>
       </header>
 
@@ -145,9 +158,9 @@ export default function App() {
             {status === "idle" || status === "error" ? (
               <>
                 <div className="drop-icon">&#128506;</div>
-                <p>Drop a melted save file here or click to browse</p>
+                <p>Drop an EU5 save file here or click to browse</p>
                 <p className="hint">
-                  Melt binary saves with: <code>rakaly melt --format eu5 -u stringify -o melted.txt save.eu5</code>
+                  Supports both binary (.eu5) and pre-melted (.txt) saves
                 </p>
                 <input
                   type="file"
