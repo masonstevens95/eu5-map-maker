@@ -1,5 +1,5 @@
 import { TokenReader } from "../token-reader";
-import { BinaryToken } from "../tokens";
+import { BinaryToken, isValueToken } from "../tokens";
 import { T } from "../game-tokens";
 
 /** Read a played_country block for player name + country ID. */
@@ -17,6 +17,7 @@ export function readPlayedCountry(
     if (tok === BinaryToken.CLOSE) { depth--; continue; }
     if (tok === BinaryToken.OPEN) { depth++; continue; }
     if (tok === BinaryToken.EQUAL) continue;
+    if (isValueToken(tok)) { r.skipValuePayload(tok); continue; }
     if (depth !== 1) continue;
 
     if (tok === T.name || tok === T.NAME_ENGINE) {

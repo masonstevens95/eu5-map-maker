@@ -1,5 +1,5 @@
 import { TokenReader } from "../token-reader";
-import { BinaryToken } from "../tokens";
+import { BinaryToken, isValueToken } from "../tokens";
 import { T } from "../game-tokens";
 import type { RGB } from "../../types";
 
@@ -73,8 +73,12 @@ export function readCountryDatabase(
       r.readToken();
       const countryId = tok === BinaryToken.I32 ? r.readI32() : r.readU32();
       r.expectEqual();
-      r.expectOpen();
-      readCountryEntry(r, countryId, countryColors, countryCapitals, overlordCandidates);
+      if (r.expectOpen()) {
+        readCountryEntry(r, countryId, countryColors, countryCapitals, overlordCandidates);
+      } else {
+        // Not a block entry (e.g., "234881085 = none") — skip the value
+        r.skipValue();
+      }
     } else {
       r.readToken();
       if (r.peekToken() === BinaryToken.EQUAL) {
@@ -101,6 +105,7 @@ export function readCountryEntry(
     if (tok === BinaryToken.CLOSE) { depth--; continue; }
     if (tok === BinaryToken.OPEN) { depth++; continue; }
     if (tok === BinaryToken.EQUAL) continue;
+    if (isValueToken(tok)) { r.skipValuePayload(tok); continue; }
 
     if (depth !== 1) continue;
 
