@@ -13,3 +13,4 @@ export {
 export { buildLocationToProvince, mapToProvinces } from "./province-mapping";
 export { generateMapChartConfig } from "./mapchart-config";
 export { exportMapChartConfig } from "./export";
+export { isBinarySave, downloadConfig } from "./save-utils";

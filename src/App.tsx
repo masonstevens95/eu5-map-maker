@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { parseMeltedSave } from "./lib/save-parser";
 import { exportMapChartConfig } from "./lib/export";
 import { buildLocationToProvince } from "./lib/province-mapping";
+import { isBinarySave, downloadConfig } from "./lib/save-utils";
 import provinceMapping from "./lib/mapchart_province_mapping.json";
 import type { ParsedSave, MapChartConfig } from "./lib/types";
 import { OptionsBar } from "./components/OptionsBar";
@@ -19,27 +20,6 @@ export interface DebugData {
   config: MapChartConfig;
   parseTimeMs: number;
   fileSizeMb: number;
-}
-
-export function isBinarySave(bytes: Uint8Array): boolean {
-  return (
-    bytes.length > 7 &&
-    bytes[0] === 0x53 &&
-    bytes[1] === 0x41 &&
-    bytes[2] === 0x56 &&
-    String.fromCharCode(bytes[5]) === "0" &&
-    String.fromCharCode(bytes[6]) === "3"
-  );
-}
-
-export function downloadConfig(config: MapChartConfig): void {
-  const blob = new Blob([JSON.stringify(config)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "mapchart_config.txt";
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 export default function App() {
