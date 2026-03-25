@@ -80,6 +80,88 @@ describe("TokenReader", () => {
       expect(r.readString()).toBe("hello");
     });
 
+    it("reads U32", () => {
+      const data = buildBytes([{ u16: BinaryToken.U32 }, { i32: 12345 }]);
+      const r = new TokenReader(data);
+      r.readToken();
+      expect(r.readU32()).toBe(12345);
+    });
+
+    it("reads F32", () => {
+      const buf = new ArrayBuffer(4);
+      new DataView(buf).setFloat32(0, 3.14, true);
+      const data = buildBytes([{ u16: BinaryToken.F32 }]);
+      const combined = new Uint8Array(data.length + 4);
+      combined.set(data);
+      combined.set(new Uint8Array(buf), data.length);
+      const r = new TokenReader(combined);
+      r.readToken();
+      expect(r.readF32()).toBeCloseTo(3.14, 2);
+    });
+
+    it("reads U64", () => {
+      // U64: lo=100, hi=0
+      const data = new Uint8Array(10);
+      const view = new DataView(data.buffer);
+      view.setUint16(0, BinaryToken.U64, true);
+      view.setUint32(2, 100, true);
+      view.setUint32(6, 0, true);
+      const r = new TokenReader(data);
+      r.readToken();
+      expect(r.readU64()).toBe(100);
+    });
+
+    it("reads I64", () => {
+      const data = new Uint8Array(10);
+      const view = new DataView(data.buffer);
+      view.setUint16(0, BinaryToken.I64, true);
+      view.setUint32(2, 50, true);
+      view.setInt32(6, 0, true);
+      const r = new TokenReader(data);
+      r.readToken();
+      expect(r.readI64()).toBe(50);
+    });
+
+    it("reads F64 (fixed-point / 10000)", () => {
+      const data = new Uint8Array(10);
+      const view = new DataView(data.buffer);
+      view.setUint16(0, BinaryToken.F64, true);
+      view.setUint32(2, 25000, true); // 25000 / 10000 = 2.5
+      view.setInt32(6, 0, true);
+      const r = new TokenReader(data);
+      r.readToken();
+      expect(r.readF64()).toBe(2.5);
+    });
+
+    it("reads UNQUOTED string", () => {
+      const data = buildBytes([{ u16: BinaryToken.UNQUOTED }, { str: "test" }]);
+      const r = new TokenReader(data);
+      r.readToken();
+      expect(r.readString()).toBe("test");
+    });
+
+    it("reads LookupU16", () => {
+      const dynStrings = ["zero", "one", "two", "three"];
+      const data = new Uint8Array(4);
+      const view = new DataView(data.buffer);
+      view.setUint16(0, BinaryToken.LOOKUP_U16, true);
+      view.setUint16(2, 3, true); // index 3
+      const r = new TokenReader(data, dynStrings);
+      r.readToken();
+      expect(r.readLookupU16()).toBe("three");
+    });
+
+    it("reads LookupU24", () => {
+      const dynStrings = Array(300).fill("").map((_, i) => `s${i}`);
+      const data = new Uint8Array(5);
+      const view = new DataView(data.buffer);
+      view.setUint16(0, BinaryToken.LOOKUP_U24, true);
+      data[2] = 200; data[3] = 0; data[4] = 0; // index 200
+      const r = new TokenReader(data, dynStrings);
+      r.readToken();
+      expect(r.readLookupU24()).toBe("s200");
+    });
+
     it("reads lookup strings", () => {
       const dynStrings = ["zero", "one", "two"];
       const data = new Uint8Array([
@@ -110,10 +192,54 @@ describe("TokenReader", () => {
       expect(r.readStringValue()).toBe("test");
     });
 
+    it("readStringValue handles LOOKUP_U8", () => {
+      const data = new Uint8Array([
+        BinaryToken.LOOKUP_U8 & 0xff, (BinaryToken.LOOKUP_U8 >> 8) & 0xff, 0,
+      ]);
+      const r = new TokenReader(data, ["hello"]);
+      expect(r.readStringValue()).toBe("hello");
+    });
+
+    it("readStringValue handles LOOKUP_U16", () => {
+      const data = new Uint8Array(4);
+      new DataView(data.buffer).setUint16(0, BinaryToken.LOOKUP_U16, true);
+      new DataView(data.buffer).setUint16(2, 1, true);
+      const r = new TokenReader(data, ["a", "b"]);
+      expect(r.readStringValue()).toBe("b");
+    });
+
+    it("readStringValue handles LOOKUP_U24", () => {
+      const data = new Uint8Array(5);
+      new DataView(data.buffer).setUint16(0, BinaryToken.LOOKUP_U24, true);
+      data[2] = 2; data[3] = 0; data[4] = 0;
+      const r = new TokenReader(data, ["a", "b", "c"]);
+      expect(r.readStringValue()).toBe("c");
+    });
+
     it("readStringValue returns null for non-string types", () => {
       const data = buildBytes([{ u16: BinaryToken.I32 }, { i32: 0 }]);
       const r = new TokenReader(data);
       expect(r.readStringValue()).toBeNull();
+    });
+
+    it("readFloatValue reads F32", () => {
+      const data = new Uint8Array(6);
+      new DataView(data.buffer).setUint16(0, BinaryToken.F32, true);
+      new DataView(data.buffer).setFloat32(2, 1.5, true);
+      const r = new TokenReader(data);
+      expect(r.readFloatValue()).toBeCloseTo(1.5);
+    });
+
+    it("readFloatValue returns null for non-float types", () => {
+      const data = buildBytes([{ u16: BinaryToken.BOOL }, { u8: 1 }]);
+      const r = new TokenReader(data);
+      expect(r.readFloatValue()).toBeNull();
+    });
+
+    it("readIntValue handles U32", () => {
+      const data = buildBytes([{ u16: BinaryToken.U32 }, { i32: 42 }]);
+      const r = new TokenReader(data);
+      expect(r.readIntValue()).toBe(42);
     });
   });
 
