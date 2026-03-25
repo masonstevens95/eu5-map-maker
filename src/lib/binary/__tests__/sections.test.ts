@@ -7,7 +7,8 @@ import { readLocationOwnership, readLocationEntries } from "../sections/location
 import { readIOManager, readIOEntry } from "../sections/io-manager";
 import { readDiplomacy, readDiplomacyEntry } from "../sections/diplomacy";
 import { readPlayedCountry } from "../sections/players";
-import { bytes, u16, eq, open, close, uintVal, quotedStr } from "./helpers";
+import { readCountryDatabase } from "../sections/countries";
+import { bytes, u16, eq, open, close, uintVal, intVal, quotedStr } from "./helpers";
 import type { RGB } from "../../types";
 
 describe("readCountries", () => {
@@ -59,6 +60,28 @@ describe("readCountryTags", () => {
   });
 });
 
+describe("readCountryDatabase", () => {
+  it("skips non-block entries (ID = none)", () => {
+    const NONE_TOKEN = 0x9876; // some token representing "none"
+    const data = bytes(
+      // Entry 1: 42 = none (non-block, should be skipped)
+      uintVal(42), eq(), u16(NONE_TOKEN),
+      // Entry 2: 99 = { flag=SWE color=RGB{0,0,255} }
+      uintVal(99), eq(), open(),
+        u16(T.flag!), eq(), quotedStr("SWE"),
+        u16(T.COLOR), eq(), u16(T.RGB), open(),
+          uintVal(0), uintVal(0), uintVal(255),
+        close(),
+      close(),
+      close(), // end of database
+    );
+    const r = new TokenReader(data, ["SWE"]);
+    const colors: Record<string, RGB> = {};
+    readCountryDatabase(r, colors, {}, new Set());
+    expect(colors["SWE"]).toEqual([0, 0, 255]);
+  });
+});
+
 describe("readCountryEntry", () => {
   it("extracts flag and color", () => {
     const data = bytes(
@@ -74,6 +97,31 @@ describe("readCountryEntry", () => {
     const overlordCandidates = new Set<string>();
     readCountryEntry(r, 42, colors, capitals, overlordCandidates);
     expect(colors["NED"]).toEqual([250, 84, 5]);
+  });
+
+  it("handles nested blocks with value tokens at depth > 1", () => {
+    // Simulates: flag=SWE, score={ rating={ LOOKUP=FIXED5 } }, color=RGB{0,0,255}
+    // The FIXED5 (0x0d4a) at depth 3 must have its 3-byte payload consumed
+    const SCORE = 0x4444; // fake "score" token
+    const RATING = 0x5555; // fake "score_rating" token
+    const data = bytes(
+      u16(T.flag!), eq(), quotedStr("SWE"),
+      u16(SCORE), eq(), open(),
+        u16(RATING), eq(), open(),
+          u16(BinaryToken.LOOKUP_U16), [0x00, 0x00], // lookup at depth 3
+          eq(),
+          u16(0x0d4a), [0x01, 0x02, 0x03], // FIXED5 unsigned 3-byte at depth 3
+        close(),
+      close(),
+      u16(T.COLOR), eq(), u16(T.RGB), open(),
+        uintVal(10), uintVal(20), uintVal(30),
+      close(),
+      close(), // end of entry
+    );
+    const r = new TokenReader(data);
+    const colors: Record<string, RGB> = {};
+    readCountryEntry(r, 0, colors, {}, new Set());
+    expect(colors["SWE"]).toEqual([10, 20, 30]);
   });
 
   it("extracts capital", () => {

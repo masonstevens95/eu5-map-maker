@@ -20,6 +20,18 @@ describe("isValueToken", () => {
     expect(isValueToken(BinaryToken.CLOSE)).toBe(false);
   });
 
+  it("returns true for FIXED5 unsigned types (0x0D48-0x0D4E)", () => {
+    for (let tok = 0x0d48; tok <= 0x0d4e; tok++) {
+      expect(isValueToken(tok)).toBe(true);
+    }
+  });
+
+  it("returns true for FIXED5 signed types (0x0D4F-0x0D55)", () => {
+    for (let tok = 0x0d4f; tok <= 0x0d55; tok++) {
+      expect(isValueToken(tok)).toBe(true);
+    }
+  });
+
   it("returns false for unknown token IDs (field names)", () => {
     expect(isValueToken(0x2812)).toBe(false);
     expect(isValueToken(0x0384)).toBe(false);
@@ -56,6 +68,18 @@ describe("valuePayloadSize", () => {
     const data = new Uint8Array([0x05, 0x00, 0x68, 0x65, 0x6c, 0x6c, 0x6f]);
     expect(valuePayloadSize(BinaryToken.QUOTED, data, 0)).toBe(7); // 2 + 5
     expect(valuePayloadSize(BinaryToken.UNQUOTED, data, 0)).toBe(7);
+  });
+
+  it("returns correct sizes for FIXED5 unsigned (0x0D48-0x0D4E)", () => {
+    for (let tok = 0x0d48; tok <= 0x0d4e; tok++) {
+      expect(valuePayloadSize(tok, empty, 0)).toBe(tok - 0x0d48 + 1);
+    }
+  });
+
+  it("returns correct sizes for FIXED5 signed (0x0D4F-0x0D55)", () => {
+    for (let tok = 0x0d4f; tok <= 0x0d55; tok++) {
+      expect(valuePayloadSize(tok, empty, 0)).toBe(tok - 0x0d4f + 1);
+    }
   });
 
   it("returns 0 for unknown token types", () => {
