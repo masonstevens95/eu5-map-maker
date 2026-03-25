@@ -7,7 +7,6 @@
 
 import { unzipSync } from "fflate";
 import tokenMap from "./eu5-tokens.json";
-import type { ParsedSave } from "./types";
 
 // Build static token resolver
 const tokenNames = new Map<number, string>();
@@ -53,9 +52,6 @@ export function meltSave(data: Uint8Array): MeltResult {
   const text = meltToText(gamestate, dynStrings, header);
   return { text, isBinary: true };
 }
-
-// Unused import guard — ParsedSave is used by App.tsx via re-export
-void (0 as unknown as ParsedSave);
 
 function parseStringLookup(data: Uint8Array): string[] {
   const strings: string[] = [];
