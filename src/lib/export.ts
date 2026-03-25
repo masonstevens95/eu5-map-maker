@@ -1,15 +1,24 @@
-import type { ExportOptions, MapChartConfig } from "./types";
+import type { ExportOptions, MapChartConfig, ParsedSave } from "./types";
 import { lightenColor } from "./colors";
 import { parseMeltedSave } from "./save-parser";
 import { buildLocationToProvince } from "./province-mapping";
 import { generateMapChartConfig } from "./mapchart-config";
 
+/**
+ * Generate a MapChart config from parsed save data or raw text.
+ *
+ * Accepts either a ParsedSave object (from binary or text parser)
+ * or a raw melted text string (for backward compatibility).
+ */
 export function exportMapChartConfig(
-  saveText: string,
+  saveOrText: ParsedSave | string,
   provinceMapping: Record<string, string[]>,
   options: ExportOptions = {},
 ): MapChartConfig {
-  const parsed = parseMeltedSave(saveText);
+  const parsed = typeof saveOrText === "string"
+    ? parseMeltedSave(saveOrText)
+    : saveOrText;
+
   let { countryLocations } = parsed;
   const { tagToPlayers, countryColors, overlordSubjects } = parsed;
 

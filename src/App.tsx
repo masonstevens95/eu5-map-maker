@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { parseMeltedSave } from "./lib/save-parser";
+import { parseBinarySave } from "./lib/binary";
 import { exportMapChartConfig } from "./lib/export";
 import { buildLocationToProvince } from "./lib/province-mapping";
 import { isBinarySave, downloadConfig } from "./lib/save-utils";
@@ -39,25 +40,18 @@ export default function App() {
         const bytes = new Uint8Array(arrayBuffer);
         const sizeMb = bytes.length / 1024 / 1024;
 
-        if (isBinarySave(bytes)) {
-          setError(
-            "This is a binary .eu5 save file. It needs to be converted to text first.\n\n" +
-            "Run this command, then upload the output .txt file:\n\n" +
-            "  rakaly melt --format eu5 -u stringify -o melted.txt " + file.name + "\n\n" +
-            "Download rakaly from: https://github.com/rakaly/cli/releases",
-          );
-          setStatus("error");
-          return;
-        }
-
         setStatus("parsing");
         await new Promise((r) => setTimeout(r, 0));
 
         const t0 = performance.now();
-        const text = new TextDecoder().decode(bytes);
-        const parsed = parseMeltedSave(text);
+
+        // Parse binary or text save
+        const parsed = isBinarySave(bytes)
+          ? parseBinarySave(bytes)
+          : parseMeltedSave(new TextDecoder().decode(bytes));
+
         const locToProvince = buildLocationToProvince(provinceMapping);
-        const config = exportMapChartConfig(text, provinceMapping, {
+        const config = exportMapChartConfig(parsed, provinceMapping, {
           playersOnly,
           title,
         });
