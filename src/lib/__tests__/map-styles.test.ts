@@ -5,7 +5,7 @@ import {
   mergeStyleOverrides,
   hasCustomOverrides,
   styleDisplayLabel,
-  EDITABLE_STYLE_KEYS,
+  EDITABLE_COLOR_KEYS,
   STYLE_FIELD_LABELS,
   IDENTITY_TRANSFORM,
   clampScale,
@@ -27,7 +27,6 @@ describe("getStyleConfig", () => {
   it("returns parchment config for parchment style", () => {
     const config = getStyleConfig("parchment");
     expect(config.defaultFill).toBe("#e8dcc8");
-    expect(config.stroke).toBe("match-fill");
     expect(config.bgColor).toBe("#b8c8c8");
     expect(config.legendBg).toBe("#f0e0c0");
   });
@@ -35,7 +34,6 @@ describe("getStyleConfig", () => {
   it("returns modern config for modern style", () => {
     const config = getStyleConfig("modern");
     expect(config.defaultFill).toBe("#d1dbdd");
-    expect(config.stroke).toBe("match-fill");
     expect(config.bgColor).toBe("#a8c4d4");
     expect(config.legendBg).toBe("#1e1e2e");
   });
@@ -122,6 +120,7 @@ describe("hasCustomOverrides", () => {
       legendBorder: "#ffffff",
     })).toBe(true);
   });
+
 });
 
 describe("styleDisplayLabel", () => {
@@ -142,20 +141,20 @@ describe("styleDisplayLabel", () => {
   });
 });
 
-describe("EDITABLE_STYLE_KEYS", () => {
+describe("EDITABLE_COLOR_KEYS", () => {
   it("contains expected keys", () => {
-    expect(EDITABLE_STYLE_KEYS).toContain("bgColor");
-    expect(EDITABLE_STYLE_KEYS).toContain("defaultFill");
-    expect(EDITABLE_STYLE_KEYS).toContain("legendBg");
-    expect(EDITABLE_STYLE_KEYS).toContain("legendBorder");
-    expect(EDITABLE_STYLE_KEYS).toContain("titleColor");
-    expect(EDITABLE_STYLE_KEYS).toContain("labelColor");
+    expect(EDITABLE_COLOR_KEYS).toContain("bgColor");
+    expect(EDITABLE_COLOR_KEYS).toContain("defaultFill");
+    expect(EDITABLE_COLOR_KEYS).toContain("legendBg");
+    expect(EDITABLE_COLOR_KEYS).toContain("legendBorder");
+    expect(EDITABLE_COLOR_KEYS).toContain("titleColor");
+    expect(EDITABLE_COLOR_KEYS).toContain("labelColor");
   });
 });
 
 describe("STYLE_FIELD_LABELS", () => {
   it("has a label for every editable key", () => {
-    for (const key of EDITABLE_STYLE_KEYS) {
+    for (const key of EDITABLE_COLOR_KEYS) {
       expect(STYLE_FIELD_LABELS[key]).toBeDefined();
       expect(typeof STYLE_FIELD_LABELS[key]).toBe("string");
     }

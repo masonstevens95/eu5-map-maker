@@ -27,6 +27,36 @@
   color: #888;
   margin-top: 0.25rem;
 }
+.header-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+.bmc-link {
+  display: inline-flex;
+}
+.bmc-img {
+  height: 32px;
+  border-radius: 6px;
+}
+.github-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #aaa;
+  text-decoration: none;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid #333;
+  border-radius: 6px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.github-link:hover {
+  color: #fff;
+  border-color: #666;
+}
 
 /* Options bar */
 .options-bar {
@@ -422,6 +452,16 @@
 .style-color-input::-webkit-color-swatch {
   border: none;
   border-radius: 2px;
+}
+.style-range-input {
+  width: 60px;
+  height: 16px;
+  accent-color: #4a6fa5;
+  cursor: pointer;
+}
+.style-checkbox {
+  accent-color: #4a6fa5;
+  cursor: pointer;
 }
 
 /* Map layout: map on left, legend on right */

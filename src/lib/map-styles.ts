@@ -13,7 +13,6 @@ import type { MapStyle } from "./types";
 
 export interface StyleConfig {
   readonly defaultFill: string;
-  readonly stroke: string;
   readonly strokeWidth: string;
   readonly viewportClass: string;
   readonly bgColor: string;
@@ -26,7 +25,6 @@ export interface StyleConfig {
 
 const PARCHMENT: StyleConfig = {
   defaultFill: "#e8dcc8",
-  stroke: "match-fill",
   strokeWidth: "0.15",
   viewportClass: "map-viewport map-viewport-parchment",
   bgColor: "#b8c8c8",
@@ -39,7 +37,6 @@ const PARCHMENT: StyleConfig = {
 
 const MODERN: StyleConfig = {
   defaultFill: "#d1dbdd",
-  stroke: "match-fill",
   strokeWidth: "0.15",
   viewportClass: "map-viewport map-viewport-modern",
   bgColor: "#a8c4d4",
@@ -56,7 +53,7 @@ export type StyleOverrides = Partial<Pick<StyleConfig,
 >>;
 
 /** The keys that are user-editable. */
-export const EDITABLE_STYLE_KEYS: readonly (keyof StyleOverrides)[] = [
+export const EDITABLE_COLOR_KEYS: readonly (keyof StyleOverrides)[] = [
   "bgColor", "defaultFill", "legendBg", "legendBorder", "titleColor", "labelColor",
 ] as const;
 
@@ -64,7 +61,7 @@ export const EDITABLE_STYLE_KEYS: readonly (keyof StyleOverrides)[] = [
 export const STYLE_FIELD_LABELS: Readonly<Record<keyof StyleOverrides, string>> = {
   bgColor: "Ocean",
   defaultFill: "Unowned Land",
-  legendBg: "Legend Background",
+  legendBg: "Legend Bg",
   legendBorder: "Legend Border",
   titleColor: "Title Text",
   labelColor: "Label Text",
@@ -82,7 +79,6 @@ export const mergeStyleOverrides = (
   ...base,
   ...overrides,
   // Preserve non-editable fields from base
-  stroke: base.stroke,
   strokeWidth: base.strokeWidth,
   viewportClass: base.viewportClass,
   countColor: base.countColor,
@@ -93,7 +89,7 @@ export const hasCustomOverrides = (
   base: StyleConfig,
   overrides: StyleOverrides,
 ): boolean =>
-  EDITABLE_STYLE_KEYS.some((key) =>
+  EDITABLE_COLOR_KEYS.some((key) =>
     overrides[key] !== undefined && overrides[key] !== base[key]
   );
 

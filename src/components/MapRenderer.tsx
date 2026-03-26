@@ -60,7 +60,8 @@ export const MapRenderer = ({ config, mapStyle, styleOverrides, onDownloadMap }:
         }
       }
 
-      // Set stroke to match fill (removes province borders, keeps country outlines via color contrast)
+      // Set stroke to match fill — province borders invisible,
+      // country outlines visible via color contrast between neighbors
       for (const p of allPaths) {
         const fill = p.getAttribute("fill") ?? style.defaultFill;
         p.setAttribute("stroke", fill);

@@ -102,8 +102,8 @@ describe("MapRenderer", () => {
     expect(html).not.toContain('id="Middlesex" fill="#ff0000"');
   });
 
-  // Style-specific tests
-  it("matches stroke to fill in parchment style (no province borders)", async () => {
+  // Stroke match-fill tests (country outlines via color contrast)
+  it("sets stroke to match fill on all paths", async () => {
     const config = {
       ...baseConfig,
       groups: { "#ff0000": { label: "ENG", paths: ["Uppland"] } },
@@ -113,20 +113,10 @@ describe("MapRenderer", () => {
       expect(container.querySelector(".map-renderer")).toBeInTheDocument();
     });
     const html = container.querySelector(".map-transform")?.innerHTML ?? "";
-    // Uppland colored #ff0000 should have stroke matching its fill
-    expect(html).toContain('stroke="#ff0000"');
-    // Middlesex uncolored should have stroke matching default parchment fill
-    expect(html).toContain('stroke="#e8dcc8"');
-  });
-
-  it("matches stroke to fill in modern style (no province borders)", async () => {
-    const { container } = render(<MapRenderer config={baseConfig} mapStyle="modern" styleOverrides={{}} onDownloadMap={noop} />);
-    await waitFor(() => {
-      expect(container.querySelector(".map-renderer")).toBeInTheDocument();
-    });
-    const html = container.querySelector(".map-transform")?.innerHTML ?? "";
-    // All paths should have stroke matching default fill
-    expect(html).toContain('stroke="#d1dbdd"');
+    // Colored path: stroke matches its fill
+    expect(html).toContain('fill="#ff0000" stroke="#ff0000"');
+    // Uncolored path: stroke matches default fill
+    expect(html).toContain('fill="#e8dcc8" stroke="#e8dcc8"');
   });
 
   it("applies parchment default fill in parchment style", async () => {
