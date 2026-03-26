@@ -27,6 +27,38 @@ const isValidDependency = (
 ): boolean =>
   first !== -1 && second !== -1 && subType !== "";
 
+/**
+ * Build a reverse mapping from tag to its canonical (first-seen) country ID.
+ * When multiple IDs map to the same tag, the canonical ID is the one in
+ * countries > tags. Dependency entries referencing non-canonical IDs are stale.
+ */
+const buildCanonicalIds = (
+  countryTags: Record<number, string>,
+): ReadonlyMap<string, number> => {
+  const canonical = new Map<string, number>();
+  for (const [idStr, tag] of Object.entries(countryTags)) {
+    if (!canonical.has(tag)) {
+      canonical.set(tag, parseInt(idStr));
+    } else {
+      /* duplicate tag — keep the first (canonical) ID */
+    }
+  }
+  return canonical;
+};
+
+/** Check whether both IDs in a dependency match their canonical country IDs. */
+const isCanonicalDependency = (
+  first: number,
+  second: number,
+  firstTag: string,
+  secondTag: string,
+  canonicalIds: ReadonlyMap<string, number>,
+): boolean => {
+  const canonFirst = canonicalIds.get(firstTag) ?? -1;
+  const canonSecond = canonicalIds.get(secondTag) ?? -1;
+  return first === canonFirst && second === canonSecond;
+};
+
 /** Add a subject tag under an overlord tag, creating the Set if needed. */
 const addDependencySubject = (
   overlordSubjects: Record<string, Set<string>>,
@@ -58,6 +90,7 @@ export const findDependencies = (
   }
 
   const r = new TokenReader(data, dynStrings);
+  const canonicalIds = buildCanonicalIds(countryTags);
   const depLo = DEP_TOK & 0xff;
   const depHi = (DEP_TOK >> 8) & 0xff;
 
@@ -123,10 +156,11 @@ export const findDependencies = (
       const overlordTag = countryTags[first] ?? "";
       const subjectTag = countryTags[second] ?? "";
       if (overlordTag !== "" && subjectTag !== "" &&
-          overlordTag !== subjectTag && isValidSubjectTag(subjectTag)) {
+          overlordTag !== subjectTag && isValidSubjectTag(subjectTag) &&
+          isCanonicalDependency(first, second, overlordTag, subjectTag, canonicalIds)) {
         addDependencySubject(overlordSubjects, overlordTag, subjectTag);
       } else {
-        /* tags missing or same country — skip */
+        /* tags missing, same country, or stale (non-canonical ID) — skip */
       }
     } else {
       /* incomplete dependency entry — skip */

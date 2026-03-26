@@ -18,6 +18,8 @@ import "./App.css";
 
 export type Status = "idle" | "reading" | "parsing" | "done" | "error";
 
+export const SHOW_DEBUG = import.meta.env.DEV;
+
 export interface DebugData {
   parsed: ParsedSave;
   locToProvince: Record<string, string>;
@@ -214,15 +216,17 @@ export default function App() {
                 <MapLegend config={debug.config} mapStyle={mapStyle} />
               </div>
             </div>
-            <div className="details-section">
-              <CountryGroups groups={debug.config.groups} />
-              <DebugPanel
-                parsed={debug.parsed}
-                locToProvince={debug.locToProvince}
-                config={debug.config}
-                provinceMapping={provinceMapping}
-              />
-            </div>
+            {SHOW_DEBUG && (
+              <div className="details-section">
+                <CountryGroups groups={debug.config.groups} />
+                <DebugPanel
+                  parsed={debug.parsed}
+                  locToProvince={debug.locToProvince}
+                  config={debug.config}
+                  provinceMapping={provinceMapping}
+                />
+              </div>
+            )}
           </>
         )}
       </main>
