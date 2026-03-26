@@ -118,7 +118,23 @@ describe("MapRenderer", () => {
   });
 
   // Outline layer tests
-  it("creates outline layer behind fill layer", async () => {
+  it("creates outline layer when outlineWidth > 0", async () => {
+    const config = {
+      ...baseConfig,
+      groups: { "#ff0000": { label: "ENG", paths: ["Uppland"] } },
+    };
+    const { container } = render(<MapRenderer config={config} mapStyle="parchment" styleOverrides={{ outlineWidth: "0.6" }} onDownloadMap={noop} />);
+    await waitFor(() => {
+      expect(container.querySelector(".map-renderer")).toBeInTheDocument();
+    });
+    const html = container.querySelector(".map-transform")?.innerHTML ?? "";
+    expect(html).toContain("outline-layer");
+    expect(html).toContain('fill="none"');
+    expect(html).toContain('stroke="#000000"');
+    expect(html).toContain("scale(0.995)");
+  });
+
+  it("no outline layer with default settings", async () => {
     const config = {
       ...baseConfig,
       groups: { "#ff0000": { label: "ENG", paths: ["Uppland"] } },
@@ -128,10 +144,7 @@ describe("MapRenderer", () => {
       expect(container.querySelector(".map-renderer")).toBeInTheDocument();
     });
     const html = container.querySelector(".map-transform")?.innerHTML ?? "";
-    expect(html).toContain("outline-layer");
-    // Outline has no fill and black stroke
-    expect(html).toContain('fill="none"');
-    expect(html).toContain('stroke="#000000"');
+    expect(html).not.toContain("outline-layer");
   });
 
   it("does not create outline layer when width is 0", async () => {
@@ -151,30 +164,13 @@ describe("MapRenderer", () => {
       groups: { "#ff0000": { label: "ENG", paths: ["Uppland"] } },
     };
     const { container } = render(
-      <MapRenderer config={config} mapStyle="parchment" styleOverrides={{ outlineColor: "#ff00ff" }} onDownloadMap={noop} />,
+      <MapRenderer config={config} mapStyle="parchment" styleOverrides={{ outlineColor: "#ff00ff", outlineWidth: "0.6" }} onDownloadMap={noop} />,
     );
     await waitFor(() => {
       expect(container.querySelector(".map-renderer")).toBeInTheDocument();
     });
     const html = container.querySelector(".map-transform")?.innerHTML ?? "";
     expect(html).toContain('stroke="#ff00ff"');
-  });
-
-  it("only outlines colored provinces, not uncolored", async () => {
-    const config = {
-      ...baseConfig,
-      groups: { "#ff0000": { label: "ENG", paths: ["Uppland"] } },
-    };
-    const { container } = render(<MapRenderer config={config} mapStyle="parchment" styleOverrides={{}} onDownloadMap={noop} />);
-    await waitFor(() => {
-      expect(container.querySelector(".map-renderer")).toBeInTheDocument();
-    });
-    const html = container.querySelector(".map-transform")?.innerHTML ?? "";
-    // Outline layer should have exactly 1 path (Uppland only, not Middlesex)
-    const outlineMatch = html.match(/outline-layer/);
-    expect(outlineMatch).not.toBeNull();
-    // The outline layer contains path with Uppland's d attribute
-    expect(html).toContain('class="outline-layer"');
   });
 
   it("applies parchment default fill in parchment style", async () => {

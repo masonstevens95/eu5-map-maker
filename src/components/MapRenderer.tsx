@@ -52,9 +52,30 @@ export const MapRenderer = ({ config, mapStyle, styleOverrides, onDownloadMap }:
         }
       }
 
-      // Outline layer: duplicate colored paths with thick stroke, no fill.
-      // Inserted BEFORE originals so fills render on top, covering internal strokes.
+      // Fill layer: set fills and match-fill strokes (invisible province borders)
       const allPaths = svg.querySelectorAll("path");
+      for (const p of allPaths) {
+        p.setAttribute("fill", style.defaultFill);
+        p.setAttribute("stroke-width", style.strokeWidth);
+      }
+
+      for (const [hex, group] of Object.entries(config.groups)) {
+        for (const pathId of group.paths) {
+          const el = svg.getElementById(pathId);
+          if (el) {
+            el.setAttribute("fill", hex);
+          }
+        }
+      }
+
+      for (const p of allPaths) {
+        const fill = p.getAttribute("fill") ?? style.defaultFill;
+        p.setAttribute("stroke", fill);
+      }
+
+      // Outline layer BEHIND fills: thick stroke on cloned paths.
+      // Fill paths are slightly scaled down (transform-box: fill-box)
+      // so the outline peeks through at all edges.
       if (parseFloat(style.outlineWidth) > 0) {
         const outlineGroup = svg.ownerDocument.createElementNS(ns, "g");
         outlineGroup.setAttribute("class", "outline-layer");
@@ -71,27 +92,15 @@ export const MapRenderer = ({ config, mapStyle, styleOverrides, onDownloadMap }:
           }
         }
         svg.insertBefore(outlineGroup, svg.firstChild);
-      }
 
-      // Fill layer: set fills and match-fill strokes (invisible province borders)
-      for (const p of allPaths) {
-        p.setAttribute("fill", style.defaultFill);
-        p.setAttribute("stroke-width", style.strokeWidth);
-      }
-
-      for (const [hex, group] of Object.entries(config.groups)) {
-        for (const pathId of group.paths) {
-          const el = svg.getElementById(pathId);
-          if (el) {
-            el.setAttribute("fill", hex);
+        // Shrink colored fill paths slightly so outline peeks through
+        for (const p of allPaths) {
+          const pathId = p.getAttribute("id") ?? "";
+          if (coloredIds.has(pathId)) {
+            p.setAttribute("style",
+              "transform-box: fill-box; transform-origin: center; transform: scale(0.995);");
           }
         }
-      }
-
-      // Match stroke to fill — invisible province borders
-      for (const p of allPaths) {
-        const fill = p.getAttribute("fill") ?? style.defaultFill;
-        p.setAttribute("stroke", fill);
       }
 
       setSvgContent(new XMLSerializer().serializeToString(svg));
