@@ -8,9 +8,14 @@ interface Props {
   styleOverrides: StyleOverrides;
   colorOverrides: ColorOverrides;
   onColorChange: (originalHex: string, newHex: string) => void;
+  onCountryClick: (tag: string) => void;
 }
 
-export const MapLegend = ({ config, mapStyle, styleOverrides, colorOverrides, onColorChange }: Props) => {
+/** Extract the tag from a group label like "TAG - Player" or "TAG". */
+const extractTag = (label: string): string =>
+  label.includes(" - ") ? label.split(" - ")[0] : label;
+
+export const MapLegend = ({ config, mapStyle, styleOverrides, colorOverrides, onColorChange, onCountryClick }: Props) => {
   const entries = Object.entries(config.groups);
 
   if (entries.length === 0) {
@@ -36,6 +41,7 @@ export const MapLegend = ({ config, mapStyle, styleOverrides, colorOverrides, on
       <div className="map-legend-entries">
         {entries.map(([originalHex, group]) => {
           const displayHex = colorOverrides[originalHex] ?? originalHex;
+          const tag = extractTag(group.label);
           return (
             <div key={originalHex} className="map-legend-entry">
               <label className="map-legend-swatch-label">
@@ -50,7 +56,11 @@ export const MapLegend = ({ config, mapStyle, styleOverrides, colorOverrides, on
                   style={{ backgroundColor: displayHex, borderColor: style.legendBorder }}
                 />
               </label>
-              <span className="map-legend-label" style={{ color: style.labelColor }}>
+              <span
+                className="map-legend-label map-legend-clickable"
+                style={{ color: style.labelColor }}
+                onClick={() => onCountryClick(tag)}
+              >
                 {group.label}
               </span>
               <span className="map-legend-count">{group.paths.length}</span>

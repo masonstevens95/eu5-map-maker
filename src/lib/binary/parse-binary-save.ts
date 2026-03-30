@@ -20,6 +20,9 @@ import { readLocationOwnership } from "./sections/locations";
 import { readDiplomacy } from "./sections/diplomacy";
 import { readPlayedCountry } from "./sections/players";
 import { findDependencies } from "./sections/dependencies";
+import { readCountryEconomies } from "./sections/economy";
+import { BinaryToken } from "./tokens";
+import { buildDisplayName } from "../country-names";
 import type { ParsedSave, RGB } from "../types";
 
 // ---------------------------------------------------------------------------
@@ -35,6 +38,7 @@ const emptyParsedSave = (): ParsedSave => ({
   tagToPlayers: {},
   countryColors: {},
   overlordSubjects: {},
+  countryNames: {},
 });
 
 /**
@@ -136,9 +140,37 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
   }
 
   const countriesOff = findSection(data, T.countries, r);
+  const countryNames: Record<string, string> = {};
   if (countriesOff >= 0) {
     r.pos = countriesOff + 6;
     readCountries(r, countryTags, countryColors, countryCapitals, overlordCandidates);
+
+    // Second pass on database for country names
+    r.pos = countriesOff + 6;
+    let d = 1;
+    while (!r.done && d > 0) {
+      const tok = r.readToken();
+      if (tok === BinaryToken.CLOSE) { d--; continue; }
+      else if (tok === BinaryToken.OPEN) { d++; continue; }
+      else if (tok === BinaryToken.EQUAL) { continue; }
+      else if (tok === T.database) {
+        r.expectEqual();
+        r.expectOpen();
+        const economies = readCountryEconomies(r, data, countryTags);
+        for (const [tag, eco] of Object.entries(economies)) {
+          const displayName = buildDisplayName(tag, eco.countryName, eco.level, eco.govType);
+          if (displayName !== tag) {
+            countryNames[tag] = displayName;
+          }
+        }
+        break;
+      } else if (r.peekToken() === BinaryToken.EQUAL) {
+        r.readToken();
+        r.skipValue();
+      } else {
+        /* other token */
+      }
+    }
   } else {
     // countries section not found — tags/colors/capitals will be empty
   }
@@ -174,7 +206,7 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
 
   const countryLocations = buildCountryLocations(locationOwners, locationNames);
 
-  return { countryLocations, tagToPlayers, countryColors, overlordSubjects };
+  return { countryLocations, tagToPlayers, countryColors, overlordSubjects, countryNames };
 };
 
 // ---------------------------------------------------------------------------

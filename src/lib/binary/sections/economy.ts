@@ -24,6 +24,8 @@ export interface CountryEconomy {
   readonly prestige: number;
   readonly countryName: string;
   readonly score: number;
+  readonly level: number;
+  readonly govType: string;
 }
 
 // =============================================================================
@@ -38,6 +40,9 @@ const SAILORS = tokenId("sailors") ?? -1;
 const STABILITY = tokenId("stability") ?? -1;
 const PRESTIGE = tokenId("prestige") ?? -1;
 const COUNTRY_NAME = tokenId("country_name") ?? -1;
+const LEVEL = tokenId("level") ?? -1;
+const GOVERNMENT = tokenId("government") ?? -1;
+const TYPE_ENGINE = 0x00e1; // "type" engine token
 const SCORE = tokenId("score") ?? -1;
 const SCORE_PLACE = tokenId("score_place") ?? -1;
 const GREAT_POWER_RANK = tokenId("great_power_rank") ?? -1;
@@ -71,6 +76,8 @@ export const emptyEconomy = (): CountryEconomy => ({
   prestige: 0,
   countryName: "",
   score: 0,
+  level: -1,
+  govType: "",
 });
 
 // =============================================================================
@@ -173,6 +180,8 @@ export const readCountryEconomies = (
       let nameOffset = -1;
       let scoreOffset = -1;
       let gpRankOffset = -1;
+      let levelOffset = -1;
+      let govOffset = -1;
 
       while (r.pos < entryEnd && depth > 0) {
         const fp = r.pos;
@@ -190,6 +199,8 @@ export const readCountryEconomies = (
           else if (ft === COUNTRY_NAME) { nameOffset = fp; }
           else if (ft === SCORE) { scoreOffset = fp; }
           else if (ft === GREAT_POWER_RANK) { gpRankOffset = fp; }
+          else if (ft === LEVEL) { levelOffset = fp; }
+          else if (ft === GOVERNMENT) { govOffset = fp; }
           else { /* other field */ }
           r.readToken();
           r.skipValue();
@@ -244,6 +255,38 @@ export const readCountryEconomies = (
               r.readToken();
               const rank = r.readIntValue() ?? 0;
               economy = { ...economy, score: rank };
+            } else if (r.peekToken() === BinaryToken.EQUAL) {
+              r.readToken(); r.skipValue();
+            } else {
+              /* other */
+            }
+          }
+        }
+      }
+
+      if (levelOffset >= 0) {
+        r.pos = levelOffset;
+        r.readToken(); r.expectEqual();
+        const lvl = r.readIntValue() ?? -1;
+        economy = { ...economy, level: lvl };
+      }
+
+      if (govOffset >= 0) {
+        r.pos = govOffset;
+        r.readToken(); r.expectEqual();
+        if (r.expectOpen()) {
+          // Look for type (engine token 0xe1) inside government block
+          let gd = 1;
+          while (!r.done && gd > 0) {
+            const gt = r.readToken();
+            if (gt === BinaryToken.CLOSE) { gd--; continue; }
+            else if (gt === BinaryToken.OPEN) { gd++; continue; }
+            else if (gt === BinaryToken.EQUAL) { continue; }
+            else if (isValueToken(gt)) { r.skipValuePayload(gt); continue; }
+            else if (gd === 1 && gt === TYPE_ENGINE && r.peekToken() === BinaryToken.EQUAL) {
+              r.readToken();
+              const govStr = r.readStringValue() ?? "";
+              economy = { ...economy, govType: govStr };
             } else if (r.peekToken() === BinaryToken.EQUAL) {
               r.readToken(); r.skipValue();
             } else {
