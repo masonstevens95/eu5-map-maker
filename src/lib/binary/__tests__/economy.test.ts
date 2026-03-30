@@ -45,6 +45,8 @@ describe("emptyEconomy", () => {
     expect(e.prestige).toBe(0);
     expect(e.countryName).toBe("");
     expect(e.score).toBe(0);
+    expect(e.level).toBe(-1);
+    expect(e.govType).toBe("");
   });
 
   it("returns a new object each time", () => {

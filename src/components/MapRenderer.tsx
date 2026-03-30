@@ -15,14 +15,41 @@ interface Props {
   mapStyle: MapStyle;
   styleOverrides: StyleOverrides;
   colorOverrides: ColorOverrides;
+  onProvinceClick?: (tag: string) => void;
 }
 
-export const MapRenderer = ({ config, mapStyle, styleOverrides, colorOverrides }: Props) => {
+export const MapRenderer = ({ config, mapStyle, styleOverrides, colorOverrides, onProvinceClick }: Props) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [svgContent, setSvgContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [transform, setTransform] = useState<Transform>(IDENTITY_TRANSFORM);
   const dragRef = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null);
+  const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
+  const provinceToTagRef = useRef<Map<string, string>>(new Map());
+
+  // Build province → tag lookup whenever config changes
+  useEffect(() => {
+    const map = new Map<string, string>();
+    for (const [, group] of Object.entries(config.groups)) {
+      const tag = group.label.includes(" - ") ? group.label.split(" - ")[0] : group.label;
+      for (const path of group.paths) {
+        map.set(path, tag);
+      }
+    }
+    provinceToTagRef.current = map;
+  }, [config]);
+
+  // Handle click on map — find province path and fire callback
+  const handleMapClick = useCallback((e: React.MouseEvent) => {
+    if (!onProvinceClick) return;
+    const target = e.target as SVGElement;
+    const id = target.getAttribute?.("id") ?? "";
+    if (id === "") return;
+    const tag = provinceToTagRef.current.get(id);
+    if (tag !== undefined) {
+      onProvinceClick(tag);
+    }
+  }, [onProvinceClick]);
 
   // Fetch and color the SVG
   useEffect(() => {
@@ -129,6 +156,7 @@ export const MapRenderer = ({ config, mapStyle, styleOverrides, colorOverrides }
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button !== 0) return;
     dragRef.current = { startX: e.clientX, startY: e.clientY, originX: transform.x, originY: transform.y };
+    mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
   }, [transform.x, transform.y]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -141,9 +169,19 @@ export const MapRenderer = ({ config, mapStyle, styleOverrides, colorOverrides }
     }));
   }, []);
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = useCallback((e: React.MouseEvent) => {
     dragRef.current = null;
-  }, []);
+    // Only treat as click if mouse barely moved (< 5px)
+    const down = mouseDownPosRef.current;
+    if (down) {
+      const dx = e.clientX - down.x;
+      const dy = e.clientY - down.y;
+      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) {
+        handleMapClick(e);
+      }
+    }
+    mouseDownPosRef.current = null;
+  }, [handleMapClick]);
 
   const handleReset = useCallback(() => {
     setTransform(IDENTITY_TRANSFORM);
@@ -174,7 +212,7 @@ export const MapRenderer = ({ config, mapStyle, styleOverrides, colorOverrides }
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        onMouseLeave={() => { dragRef.current = null; mouseDownPosRef.current = null; }}
       >
         <div
           className="map-transform"

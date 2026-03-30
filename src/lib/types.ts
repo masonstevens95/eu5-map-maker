@@ -5,6 +5,7 @@ export interface ParsedSave {
   tagToPlayers: Record<string, string[]>;
   countryColors: Record<string, RGB>;
   overlordSubjects: Record<string, Set<string>>;
+  countryNames: Record<string, string>;
 }
 
 export interface MapChartGroup {

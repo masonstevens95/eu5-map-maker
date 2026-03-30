@@ -259,4 +259,80 @@ describe("MapRenderer", () => {
     expect(html).not.toContain('style=');
     expect(html).toContain('id="Red_Sea_Coast" fill="#ff0000"');
   });
+
+  // Province click tests
+  it("fires onProvinceClick with tag on single click", async () => {
+    const onClick = vi.fn();
+    const config = {
+      ...baseConfig,
+      groups: { "#ff0000": { label: "ENG - Alice", paths: ["Uppland"] } },
+    };
+    const { container } = render(
+      <MapRenderer config={config} mapStyle="parchment" styleOverrides={{}} colorOverrides={{}} onProvinceClick={onClick} />,
+    );
+    await waitFor(() => {
+      expect(container.querySelector(".map-renderer")).toBeInTheDocument();
+    });
+    const viewport = container.querySelector(".map-viewport")!;
+    // Simulate click (mouseDown + mouseUp at same position)
+    fireEvent.mouseDown(viewport, { clientX: 100, clientY: 100, button: 0 });
+    // Fire mouseUp on an SVG path element
+    const path = container.querySelector("#Uppland");
+    if (path) {
+      fireEvent.mouseUp(path, { clientX: 100, clientY: 100 });
+      expect(onClick).toHaveBeenCalledWith("ENG");
+    }
+  });
+
+  it("does not fire onProvinceClick when dragging", async () => {
+    const onClick = vi.fn();
+    const config = {
+      ...baseConfig,
+      groups: { "#ff0000": { label: "ENG", paths: ["Uppland"] } },
+    };
+    const { container } = render(
+      <MapRenderer config={config} mapStyle="parchment" styleOverrides={{}} colorOverrides={{}} onProvinceClick={onClick} />,
+    );
+    await waitFor(() => {
+      expect(container.querySelector(".map-renderer")).toBeInTheDocument();
+    });
+    const viewport = container.querySelector(".map-viewport")!;
+    // Simulate drag (mouseDown then mouseUp far away)
+    fireEvent.mouseDown(viewport, { clientX: 100, clientY: 100, button: 0 });
+    fireEvent.mouseMove(viewport, { clientX: 200, clientY: 200 });
+    fireEvent.mouseUp(viewport, { clientX: 200, clientY: 200 });
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it("does not fire onProvinceClick for uncolored provinces", async () => {
+    const onClick = vi.fn();
+    const config = {
+      ...baseConfig,
+      groups: { "#ff0000": { label: "ENG", paths: ["Uppland"] } },
+    };
+    const { container } = render(
+      <MapRenderer config={config} mapStyle="parchment" styleOverrides={{}} colorOverrides={{}} onProvinceClick={onClick} />,
+    );
+    await waitFor(() => {
+      expect(container.querySelector(".map-renderer")).toBeInTheDocument();
+    });
+    const viewport = container.querySelector(".map-viewport")!;
+    // Click on Middlesex which is not in any group
+    fireEvent.mouseDown(viewport, { clientX: 100, clientY: 100, button: 0 });
+    const path = container.querySelector("#Middlesex");
+    if (path) {
+      fireEvent.mouseUp(path, { clientX: 100, clientY: 100 });
+    }
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it("uses default cursor, not grab", async () => {
+    const { container } = render(<MapRenderer config={baseConfig} mapStyle="parchment" styleOverrides={{}} colorOverrides={{}} />);
+    await waitFor(() => {
+      expect(container.querySelector(".map-viewport")).toBeInTheDocument();
+    });
+    const viewport = container.querySelector(".map-viewport") as HTMLElement;
+    const style = window.getComputedStyle(viewport);
+    expect(style.cursor).not.toBe("grab");
+  });
 });

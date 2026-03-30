@@ -67,6 +67,7 @@ describe("DebugPanel rendering", () => {
           tagToPlayers: {},
           countryColors: {},
           overlordSubjects: {},
+          countryNames: {},
         }}
         locToProvince={{}}
         config={{

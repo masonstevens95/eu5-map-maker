@@ -22,6 +22,9 @@ import { CountryGroups } from "./components/CountryGroups";
 import { DebugPanel } from "./components/DebugPanel";
 import { MapRenderer } from "./components/MapRenderer";
 import { MapLegend } from "./components/MapLegend";
+import { CountryModal } from "./components/CountryModal";
+import { buildCountryInfo } from "./lib/country-info";
+import type { CountryInfo } from "./lib/country-info";
 import { Stat } from "./components/Stat";
 import "./App.css";
 
@@ -46,6 +49,7 @@ export default function App() {
   const [styleOverrides, setStyleOverrides] = useState<StyleOverrides>({});
   const [colorOverrides, setColorOverrides] = useState<Record<string, string>>({});
   const [debug, setDebug] = useState<DebugData | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState<CountryInfo | undefined>(undefined);
   const mapLayoutRef = useRef<HTMLDivElement>(null);
 
   const handleFile = useCallback(
@@ -86,6 +90,16 @@ export default function App() {
 
   const handleDownloadConfig = useCallback(() => {
     if (debug) downloadConfig(debug.config);
+  }, [debug]);
+
+  const handleCountryClick = useCallback((tag: string) => {
+    if (!debug) return;
+    const config = debug.config;
+    // Find province count for this tag
+    const group = Object.values(config.groups).find((g) => g.label.startsWith(tag));
+    const provinceCount = group?.paths.length ?? 0;
+    const info = buildCountryInfo(tag, debug.parsed, provinceCount);
+    setSelectedCountry(info);
   }, [debug]);
 
   const handleColorChange = useCallback((originalHex: string, newHex: string) => {
@@ -340,6 +354,7 @@ export default function App() {
                   mapStyle={mapStyle}
                   styleOverrides={styleOverrides}
                   colorOverrides={colorOverrides}
+                  onProvinceClick={handleCountryClick}
                 />
               </div>
               <div className="legend-panel">
@@ -349,6 +364,7 @@ export default function App() {
                   styleOverrides={styleOverrides}
                   colorOverrides={colorOverrides}
                   onColorChange={handleColorChange}
+                  onCountryClick={handleCountryClick}
                 />
               </div>
             </div>
@@ -365,6 +381,14 @@ export default function App() {
               </div>
             )}
           </>
+        )}
+
+        {selectedCountry !== undefined && debug && (
+          <CountryModal
+            info={selectedCountry}
+            countryNames={debug.parsed.countryNames}
+            onClose={() => setSelectedCountry(undefined)}
+          />
         )}
       </main>
     </div>
