@@ -1,6 +1,9 @@
+import { useState } from "react";
 import type { MapChartConfig, MapStyle } from "../lib/types";
 import { getStyleConfig } from "../lib/map-styles";
 import type { StyleOverrides, ColorOverrides } from "../lib/map-styles";
+import { sortLegendEntries, extractTag } from "../lib/legend-sort";
+import type { LegendSortMode } from "../lib/legend-sort";
 
 interface Props {
   config: MapChartConfig;
@@ -11,18 +14,20 @@ interface Props {
   onCountryClick: (tag: string) => void;
 }
 
-/** Extract the tag from a group label like "TAG - Player" or "TAG". */
-const extractTag = (label: string): string =>
-  label.includes(" - ") ? label.split(" - ")[0] : label;
-
 export const MapLegend = ({ config, mapStyle, styleOverrides, colorOverrides, onColorChange, onCountryClick }: Props) => {
-  const entries = Object.entries(config.groups);
+  const [sortMode, setSortMode] = useState<LegendSortMode>("alpha");
+  const rawEntries = Object.entries(config.groups);
 
-  if (entries.length === 0) {
+  if (rawEntries.length === 0) {
     return null;
   }
 
   const style = getStyleConfig(mapStyle, styleOverrides);
+
+  const legendEntries = sortLegendEntries(
+    rawEntries.map(([hex, group]) => ({ hex, group })),
+    sortMode,
+  );
 
   return (
     <div
@@ -32,14 +37,39 @@ export const MapLegend = ({ config, mapStyle, styleOverrides, colorOverrides, on
         borderColor: style.legendBorder,
       }}
     >
-      <h3
-        className="map-legend-title"
-        style={{ color: style.titleColor, borderBottomColor: style.legendBorder }}
-      >
-        {config.title || "Legend"}
-      </h3>
+      <div className="map-legend-header" style={{ borderBottomColor: style.legendBorder }}>
+        <h3
+          className="map-legend-title"
+          style={{ color: style.titleColor }}
+        >
+          {config.title || "Legend"}
+        </h3>
+        <div className="map-legend-sort">
+          <button
+            className={`legend-sort-btn ${sortMode === "alpha" ? "active" : ""}`}
+            onClick={() => setSortMode("alpha")}
+            title="Sort alphabetically"
+          >
+            A-Z
+          </button>
+          <button
+            className={`legend-sort-btn ${sortMode === "provinces" ? "active" : ""}`}
+            onClick={() => setSortMode("provinces")}
+            title="Sort by direct province count"
+          >
+            #
+          </button>
+          <button
+            className={`legend-sort-btn ${sortMode === "total" ? "active" : ""}`}
+            onClick={() => setSortMode("total")}
+            title="Sort by total provinces (direct + subjects)"
+          >
+            ##
+          </button>
+        </div>
+      </div>
       <div className="map-legend-entries">
-        {entries.map(([originalHex, group]) => {
+        {legendEntries.map(({ hex: originalHex, group }) => {
           const displayHex = colorOverrides[originalHex] ?? originalHex;
           const tag = extractTag(group.label);
           return (

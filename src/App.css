@@ -558,16 +558,45 @@
     inset 0 0 0 1px rgba(139, 115, 85, 0.2);
   font-family: 'Crimson Pro', Georgia, serif;
 }
+.map-legend-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #c4a87a;
+}
 .map-legend-title {
   font-size: 1.1rem;
   color: #3d2b1f;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #c4a87a;
   font-family: 'Cinzel', Georgia, serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-weight: 600;
+  margin: 0;
+}
+.map-legend-sort {
+  display: flex;
+  gap: 0.25rem;
+}
+.legend-sort-btn {
+  background: none;
+  border: 1px solid #8b7355;
+  border-radius: 3px;
+  color: #8b7355;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.15rem 0.35rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.legend-sort-btn:hover {
+  color: #3d2b1f;
+  border-color: #3d2b1f;
+}
+.legend-sort-btn.active {
+  background: #8b7355;
+  color: #f0e0c0;
 }
 .map-legend-entries {
   display: flex;
