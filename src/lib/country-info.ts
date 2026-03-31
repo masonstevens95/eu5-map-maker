@@ -5,7 +5,7 @@
  * No null, no exceptions, every if has an else.
  */
 
-import type { ParsedSave, RGB, CountryEconomyStats } from "./types";
+import type { ParsedSave, RGB } from "./types";
 import { rgbToHex } from "./colors";
 
 // =============================================================================
