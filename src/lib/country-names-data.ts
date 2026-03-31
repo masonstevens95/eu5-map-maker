@@ -56,7 +56,7 @@ export const KNOWN_NAMES: Readonly<Record<string, string>> = {
   WBG: "Wurzburg", WES: "Westphalia", NUM: "Nuremberg", DTT: "Dithmarschen",
   GER: "Germany", PRU: "Prussia", HAN: "Hanover", BRG: "Berg",
   BAM: "Bamberg", PDB: "Paderborn", OSN: "Osnabruck", DNZ: "Danzig",
-  RIG: "Riga", FRK: "Franconia", SFC: "Swiss Confederation", CHE: "Switzerland",
+  RIG: "Riga", FRK: "Franconia", SFC: "Swiss Confederation", SWI: "Switzerland",
   ERF: "Erfurt",
 
   // Poland & Lithuania
