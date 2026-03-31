@@ -14,6 +14,7 @@ import { AppHeader } from "./components/AppHeader";
 import { MapTab, SHOW_DEBUG } from "./components/MapTab";
 import { RankingsTab } from "./components/RankingsTab";
 import { PlaceholderTab } from "./components/PlaceholderTab";
+import { MilitaryTab } from "./components/MilitaryTab";
 import { buildCountryInfo } from "./lib/country-info";
 import type { CountryInfo } from "./lib/country-info";
 import { findTagProvinceCount } from "./lib/format";
@@ -172,7 +173,7 @@ export default function App() {
             )}
 
             {activeTab === "military" && (
-              <PlaceholderTab title="Military" description="Army and navy statistics — coming soon" />
+              <MilitaryTab parsed={debug.parsed} onCountryClick={handleCountryClick} />
             )}
 
             {activeTab === "wars" && (

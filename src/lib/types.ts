@@ -1,15 +1,26 @@
 export type RGB = [number, number, number];
 
-/** Economy stats per country (optional, populated by binary parser). */
+/** Combined stats per country (populated by binary parser). */
 export interface CountryEconomyStats {
   readonly gold: number;
   readonly monthlyIncome: number;
   readonly monthlyTradeValue: number;
   readonly population: number;
+  // Military — actual forces (from subunit_manager)
+  readonly regiments: number;
+  readonly ships: number;
+  readonly armyStrength: number;
+  readonly navyStrength: number;
+  // Military — capacity (from country database)
   readonly maxManpower: number;
   readonly maxSailors: number;
+  readonly monthlyManpower: number;
+  readonly monthlySailors: number;
+  readonly armyMaintenance: number;
+  readonly navyMaintenance: number;
   readonly expectedArmySize: number;
   readonly expectedNavySize: number;
+  // Identity
   readonly courtLanguage: string;
   readonly govType: string;
   readonly score: number;

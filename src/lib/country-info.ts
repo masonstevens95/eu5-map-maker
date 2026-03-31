@@ -17,8 +17,16 @@ export interface CountryStats {
   readonly monthlyIncome: number;
   readonly monthlyTradeValue: number;
   readonly population: number;
+  readonly regiments: number;
+  readonly ships: number;
+  readonly armyStrength: number;
+  readonly navyStrength: number;
   readonly maxManpower: number;
   readonly maxSailors: number;
+  readonly monthlyManpower: number;
+  readonly monthlySailors: number;
+  readonly armyMaintenance: number;
+  readonly navyMaintenance: number;
   readonly expectedArmySize: number;
   readonly expectedNavySize: number;
   readonly courtLanguage: string;
@@ -71,7 +79,10 @@ export const getSubjects = (
 
 const EMPTY_STATS: CountryStats = {
   gold: 0, monthlyIncome: 0, monthlyTradeValue: 0, population: 0,
-  maxManpower: 0, maxSailors: 0, expectedArmySize: 0, expectedNavySize: 0,
+  regiments: 0, ships: 0, armyStrength: 0, navyStrength: 0,
+  maxManpower: 0, maxSailors: 0, monthlyManpower: 0, monthlySailors: 0,
+  armyMaintenance: 0, navyMaintenance: 0,
+  expectedArmySize: 0, expectedNavySize: 0,
   courtLanguage: "", govType: "", score: 0,
 };
 

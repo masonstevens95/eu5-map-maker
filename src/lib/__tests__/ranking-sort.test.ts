@@ -11,7 +11,10 @@ import type { CountryEconomyStats } from "../types";
 
 const mkStats = (overrides: Partial<CountryEconomyStats> = {}): CountryEconomyStats => ({
   gold: 0, monthlyIncome: 0, monthlyTradeValue: 0, population: 1000,
-  maxManpower: 0, maxSailors: 0, expectedArmySize: 0, expectedNavySize: 0,
+  regiments: 0, ships: 0, armyStrength: 0, navyStrength: 0,
+  maxManpower: 0, maxSailors: 0, monthlyManpower: 0, monthlySailors: 0,
+  armyMaintenance: 0, navyMaintenance: 0,
+  expectedArmySize: 0, expectedNavySize: 0,
   courtLanguage: "", govType: "", score: 0, ...overrides,
 });
 

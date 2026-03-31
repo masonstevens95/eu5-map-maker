@@ -119,8 +119,16 @@ export const CountryModal = ({ info, countryNames, onClose }: Props) => {
             </div>
           </div>
 
-          {/* Military */}
+          {/* Military — Forces */}
           <div className="modal-stats-grid">
+            <div className="modal-stat">
+              <span className="modal-stat-value">{fmtNum(stats.regiments)}</span>
+              <span className="modal-stat-label">Regiments</span>
+            </div>
+            <div className="modal-stat">
+              <span className="modal-stat-value">{fmtNum(stats.ships)}</span>
+              <span className="modal-stat-label">Ships</span>
+            </div>
             <div className="modal-stat">
               <span className="modal-stat-value">{fmtNum(stats.maxManpower)}</span>
               <span className="modal-stat-label">Max Manpower</span>
@@ -128,14 +136,6 @@ export const CountryModal = ({ info, countryNames, onClose }: Props) => {
             <div className="modal-stat">
               <span className="modal-stat-value">{fmtNum(stats.maxSailors)}</span>
               <span className="modal-stat-label">Max Sailors</span>
-            </div>
-            <div className="modal-stat">
-              <span className="modal-stat-value">{fmtNum(stats.expectedArmySize)}</span>
-              <span className="modal-stat-label">Expected Army</span>
-            </div>
-            <div className="modal-stat">
-              <span className="modal-stat-value">{fmtNum(stats.expectedNavySize)}</span>
-              <span className="modal-stat-label">Expected Navy</span>
             </div>
           </div>
 
