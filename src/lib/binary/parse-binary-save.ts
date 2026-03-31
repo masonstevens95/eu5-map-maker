@@ -222,6 +222,7 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
       expectedNavySize: eco.expectedNavySize,
       courtLanguage: eco.courtLanguage,
       govType: eco.govType,
+      score: eco.score,
     };
   }
 

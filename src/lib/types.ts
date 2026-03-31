@@ -12,6 +12,7 @@ export interface CountryEconomyStats {
   readonly expectedNavySize: number;
   readonly courtLanguage: string;
   readonly govType: string;
+  readonly score: number;
 }
 
 export interface ParsedSave {

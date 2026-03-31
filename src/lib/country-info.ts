@@ -23,6 +23,7 @@ export interface CountryStats {
   readonly expectedNavySize: number;
   readonly courtLanguage: string;
   readonly govType: string;
+  readonly score: number;
 }
 
 export interface CountryInfo {
@@ -71,7 +72,7 @@ export const getSubjects = (
 const EMPTY_STATS: CountryStats = {
   gold: 0, monthlyIncome: 0, monthlyTradeValue: 0, population: 0,
   maxManpower: 0, maxSailors: 0, expectedArmySize: 0, expectedNavySize: 0,
-  courtLanguage: "", govType: "",
+  courtLanguage: "", govType: "", score: 0,
 };
 
 /** Build a CountryInfo from parsed save data for a given tag. */
