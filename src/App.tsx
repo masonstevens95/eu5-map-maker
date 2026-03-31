@@ -28,6 +28,7 @@ import type { CountryInfo } from "./lib/country-info";
 import { Stat } from "./components/Stat";
 import { buildRankingEntries, sortRankings, filterPlayersOnly, isGreatPower } from "./lib/ranking-sort";
 import type { RankingSortMode } from "./lib/ranking-sort";
+import { fmtNum, computeProvinceCount, findTagProvinceCount } from "./lib/format";
 import "./App.css";
 
 export type Status = "idle" | "reading" | "parsing" | "done" | "error";
@@ -101,11 +102,8 @@ export default function App() {
 
   const handleCountryClick = useCallback((tag: string) => {
     if (!debug) return;
-    const config = debug.config;
-    // Find province count for this tag
-    const group = Object.values(config.groups).find((g) => g.label.startsWith(tag));
-    const provinceCount = group?.paths.length ?? 0;
-    const info = buildCountryInfo(tag, debug.parsed, provinceCount);
+    const count = findTagProvinceCount(tag, debug.config.groups);
+    const info = buildCountryInfo(tag, debug.parsed, count);
     setSelectedCountry(info);
   }, [debug]);
 
@@ -209,9 +207,7 @@ export default function App() {
 
   const isLoading = status === "reading" || status === "parsing";
   const isCustom = hasCustomOverrides(getBaseStyleConfig(mapStyle), styleOverrides);
-  const provinceCount = debug
-    ? Object.values(debug.config.groups).reduce((n, g) => n + g.paths.length, 0)
-    : 0;
+  const provinceCount = debug ? computeProvinceCount(debug.config.groups) : 0;
 
   return (
     <div className={status === "done" ? "app app-wide" : "app"}>
@@ -440,10 +436,6 @@ export default function App() {
               );
               const filtered = filterPlayersOnly(allEntries, rankPlayersOnly);
               const sorted = sortRankings(filtered, rankSort);
-              const fmtN = (n: number): string =>
-                n >= 1_000_000 ? (n / 1_000_000).toFixed(1) + "M"
-                : n >= 1_000 ? (n / 1_000).toFixed(1) + "K"
-                : n > 0 ? n.toFixed(0) : "—";
 
               return (
                 <div className="rankings-tab">
@@ -490,15 +482,15 @@ export default function App() {
                             <span className="ranking-stat-lbl">Rank</span>
                           </div>
                           <div className="ranking-stat">
-                            <span className="ranking-stat-val">{fmtN(entry.stats.population)}</span>
+                            <span className="ranking-stat-val">{fmtNum(entry.stats.population)}</span>
                             <span className="ranking-stat-lbl">Pop</span>
                           </div>
                           <div className="ranking-stat">
-                            <span className="ranking-stat-val">{fmtN(entry.stats.monthlyIncome)}</span>
+                            <span className="ranking-stat-val">{fmtNum(entry.stats.monthlyIncome)}</span>
                             <span className="ranking-stat-lbl">Income</span>
                           </div>
                           <div className="ranking-stat">
-                            <span className="ranking-stat-val">{fmtN(entry.stats.maxManpower)}</span>
+                            <span className="ranking-stat-val">{fmtNum(entry.stats.maxManpower)}</span>
                             <span className="ranking-stat-lbl">Manpower</span>
                           </div>
                         </div>

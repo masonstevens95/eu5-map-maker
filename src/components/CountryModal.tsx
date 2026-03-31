@@ -1,30 +1,12 @@
 import type { CountryInfo } from "../lib/country-info";
 import { resolveDisplayName } from "../lib/country-info";
+import { fmtNum, fmtLanguage, fmtGovType } from "../lib/format";
 
 interface Props {
   info: CountryInfo;
   countryNames: Readonly<Record<string, string>>;
   onClose: () => void;
 }
-
-/** Format a number with K/M suffix. */
-const fmtNum = (n: number): string =>
-  n >= 1_000_000 ? (n / 1_000_000).toFixed(1) + "M"
-    : n >= 1_000 ? (n / 1_000).toFixed(1) + "K"
-    : n > 0 ? n.toFixed(0)
-    : "—";
-
-/** Format court language for display. */
-const fmtLang = (lang: string): string =>
-  lang !== ""
-    ? lang.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-    : "";
-
-/** Format government type for display. */
-const fmtGov = (gov: string): string =>
-  gov !== ""
-    ? gov.charAt(0).toUpperCase() + gov.slice(1)
-    : "";
 
 export const CountryModal = ({ info, countryNames, onClose }: Props) => {
   const { stats } = info;
@@ -63,14 +45,14 @@ export const CountryModal = ({ info, countryNames, onClose }: Props) => {
           {stats.govType !== "" ? (
             <div className="modal-field">
               <span className="modal-label">Government</span>
-              <span className="modal-value">{fmtGov(stats.govType)}</span>
+              <span className="modal-value">{fmtGovType(stats.govType)}</span>
             </div>
           ) : (<></>)}
 
           {stats.courtLanguage !== "" ? (
             <div className="modal-field">
               <span className="modal-label">Language</span>
-              <span className="modal-value">{fmtLang(stats.courtLanguage)}</span>
+              <span className="modal-value">{fmtLanguage(stats.courtLanguage)}</span>
             </div>
           ) : (<></>)}
 
