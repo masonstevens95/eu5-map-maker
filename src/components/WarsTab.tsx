@@ -27,17 +27,29 @@ export const WarsTab = ({ parsed }: Props) => {
   const { wars, countryNames } = parsed;
   const [selectedWar, setSelectedWar] = useState<WarData | undefined>(undefined);
 
+  const active = wars.filter(w => !w.isEnded);
+  const ended = wars.filter(w => w.isEnded);
+
   return (
     <div className="rankings-tab">
       {wars.length === 0 ? (
         <div className="tab-placeholder">
-          <h2>No Active Wars</h2>
-          <p>There are no ongoing wars in this save.</p>
+          <h2>No Wars</h2>
+          <p>There are no wars in this save.</p>
         </div>
       ) : (
         <div className="wars-grid">
-          {wars.map((war, i) => (
-            <WarCard key={i} war={war} countryNames={countryNames} onClick={() => setSelectedWar(war)} />
+          {active.length > 0 ? (
+            <span className="war-section-label">Active Wars ({active.length})</span>
+          ) : (<></>)}
+          {active.map((war, i) => (
+            <WarCard key={`a${i}`} war={war} countryNames={countryNames} onClick={() => setSelectedWar(war)} />
+          ))}
+          {ended.length > 0 ? (
+            <span className="war-section-label war-section-ended">Past Wars ({ended.length})</span>
+          ) : (<></>)}
+          {ended.map((war, i) => (
+            <WarCard key={`e${i}`} war={war} countryNames={countryNames} onClick={() => setSelectedWar(war)} />
           ))}
         </div>
       )}
@@ -56,7 +68,7 @@ const WarCard = ({ war, countryNames, onClick }: { war: WarData; countryNames: R
   const defenderName = resolveName(war.defenderTag, countryNames);
 
   return (
-    <div className="war-card" onClick={onClick}>
+    <div className={`war-card${war.isEnded ? " war-card-ended" : ""}`} onClick={onClick}>
       <div className="war-header">
         <span className="war-title">{attackerName} vs {defenderName}</span>
         <span className="war-cb">{fmtCb(war.casusBelli)}</span>
@@ -99,7 +111,7 @@ const WarModal = ({ war, countryNames, onClose }: { war: WarData; countryNames: 
         <div className="modal-header" style={{ borderBottomColor: "#c44" }}>
           <div className="modal-titles">
             <h2 className="modal-name">{attackerName} vs {defenderName}</h2>
-            <span className="modal-tag">{fmtCb(war.casusBelli)}</span>
+            <span className="modal-tag">{fmtCb(war.casusBelli)}{war.isEnded ? " — Ended" : ""}</span>
           </div>
         </div>
 

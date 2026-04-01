@@ -33,6 +33,8 @@ export interface War {
   readonly defenderId: number;
   readonly casusBelli: string;
   readonly startDate: number;
+  readonly endDate: number;
+  readonly isEnded: boolean;
   readonly attackerScore: number;
   readonly defenderScore: number;
   readonly participants: readonly WarParticipant[];
@@ -53,6 +55,8 @@ const ORIGINAL_ATTACKER = tokenId("original_attacker") ?? -1;
 const ORIGINAL_ATTACKER_TARGET = tokenId("original_attacker_target") ?? -1;
 const CASUS_BELLI = tokenId("casus_belli") ?? -1;
 const START_DATE = tokenId("start_date") ?? -1;
+const END_DATE = tokenId("end_date") ?? -1;
+const PREVIOUS = tokenId("previous") ?? -1;
 const ATTACKER_SCORE = tokenId("attacker_score") ?? -1;
 const DEFENDER_SCORE = tokenId("defender_score") ?? -1;
 const BATTLE = tokenId("battle") ?? -1;
@@ -252,7 +256,8 @@ export const readWars = (
               if (r.peekToken() === BinaryToken.OPEN) {
                 r.readToken(); // {
                 let attackerId = -1, defenderId = -1, casusBelli = "";
-                let startDate = 0, attackerScore = 0, defenderScore = 0;
+                let startDate = 0, endDate = 0, isEnded = false;
+                let attackerScore = 0, defenderScore = 0;
                 let participants: WarParticipant[] = [];
                 const battles: WarBattle[] = [];
                 let wd = 1;
@@ -269,6 +274,8 @@ export const readWars = (
                     else if (wft === ATTACKER_SCORE) { r.readToken(); const vt = r.readToken(); if (isFixed5(vt)) { const sz = valuePayloadSize(vt, data, r.pos); attackerScore = readFixed5(data, r.pos, vt); r.pos += sz; } else if (vt === BinaryToken.I32) attackerScore = r.readI32(); else if (vt === BinaryToken.U32) attackerScore = r.readU32(); else r.skipValuePayload(vt); }
                     else if (wft === DEFENDER_SCORE) { r.readToken(); const vt = r.readToken(); if (isFixed5(vt)) { const sz = valuePayloadSize(vt, data, r.pos); defenderScore = readFixed5(data, r.pos, vt); r.pos += sz; } else if (vt === BinaryToken.I32) defenderScore = r.readI32(); else if (vt === BinaryToken.U32) defenderScore = r.readU32(); else r.skipValuePayload(vt); }
                     else if (wft === START_DATE) { r.readToken(); const vt = r.readToken(); if (vt === BinaryToken.I32) startDate = r.readI32(); else if (vt === BinaryToken.U32) startDate = r.readU32(); else r.skipValuePayload(vt); }
+                    else if (wft === END_DATE) { r.readToken(); const vt = r.readToken(); if (vt === BinaryToken.I32) endDate = r.readI32(); else if (vt === BinaryToken.U32) endDate = r.readU32(); else r.skipValuePayload(vt); }
+                    else if (wft === PREVIOUS) { isEnded = true; r.readToken(); r.skipValue(); }
                     else if (wft === BATTLE) { r.readToken(); if (r.expectOpen()) { battles.push(readBattle(r, data)); } else { r.skipValue(); } }
                     else if (wft === TAKE_PROVINCE) {
                       r.readToken();
@@ -294,7 +301,7 @@ export const readWars = (
                   } else { /* bare */ }
                 }
                 if (attackerId >= 0) {
-                  wars.push({ attackerId, defenderId, casusBelli, startDate, attackerScore, defenderScore, participants, battles });
+                  wars.push({ attackerId, defenderId, casusBelli, startDate, endDate, isEnded, attackerScore, defenderScore, participants, battles });
                 }
               } else {
                 // "none" or other bare token — consume it

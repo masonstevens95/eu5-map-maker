@@ -22,6 +22,7 @@ import { readPlayedCountry } from "./sections/players";
 import { findDependencies } from "./sections/dependencies";
 import { readCountryDatabase } from "./sections/country-stats";
 import { readWars } from "./sections/wars";
+import { readTradeData } from "./sections/trade";
 import type { CountryData } from "./sections/country-stats";
 import { readCountryForces } from "./sections/units";
 import { BinaryToken } from "./tokens";
@@ -42,7 +43,7 @@ const emptyParsedSave = (): ParsedSave => ({
   countryColors: {},
   overlordSubjects: {},
   countryNames: {},
-  countryStats: {}, wars: [],
+  countryStats: {}, wars: [], trade: { producedGoods: {}, markets: [] },
 });
 
 /**
@@ -260,6 +261,8 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
     defenderTag: countryTags[w.defenderId] ?? `id:${w.defenderId}`,
     casusBelli: w.casusBelli,
     startDate: w.startDate,
+    endDate: w.endDate,
+    isEnded: w.isEnded,
     attackerScore: w.attackerScore,
     defenderScore: w.defenderScore,
     participants: w.participants.map(p => ({
@@ -270,7 +273,10 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
     battles: w.battles,
   }));
 
-  return { countryLocations, tagToPlayers, countryColors, overlordSubjects, countryNames, countryStats, wars };
+  // Read trade data
+  const trade = readTradeData(data, dynStrings);
+
+  return { countryLocations, tagToPlayers, countryColors, overlordSubjects, countryNames, countryStats, wars, trade };
 };
 
 // ---------------------------------------------------------------------------

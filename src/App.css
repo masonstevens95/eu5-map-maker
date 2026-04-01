@@ -1188,3 +1188,105 @@
   color: #888;
   font-size: 0.75rem;
 }
+.war-section-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #c44;
+  padding: 0.5rem 0 0.2rem;
+}
+.war-section-ended {
+  color: #666;
+  margin-top: 0.5rem;
+}
+.war-card-ended {
+  border-left-color: #555;
+  opacity: 0.7;
+}
+
+/* Trade Tab */
+.trade-goods-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.trade-good-card {
+  background: #1e1e2e;
+  border-radius: 5px;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 80px;
+  transition: background 0.1s;
+}
+.trade-good-card:hover {
+  background: #2a2a3e;
+}
+.trade-good-selected {
+  outline: 2px solid #48a;
+}
+.trade-good-name {
+  font-size: 0.75rem;
+  color: #ccc;
+}
+.trade-good-val {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+}
+.trade-good-markets {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.trade-market-header {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1fr;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  color: #666;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.3rem 0.4rem;
+  border-bottom: 1px solid #333;
+}
+.trade-market-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1fr;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #ccc;
+  padding: 0.25rem 0.4rem;
+  background: #2a2a3e;
+  border-radius: 3px;
+}
+
+/* Subtab bar */
+.subtab-bar {
+  display: flex;
+  gap: 0.25rem;
+}
+.subtab-btn {
+  background: #1e1e2e;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #888;
+  font-size: 0.8rem;
+  padding: 0.3rem 0.8rem;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+.subtab-btn:hover {
+  background: #2a2a3e;
+  color: #ccc;
+}
+.subtab-active {
+  background: #2a2a3e;
+  color: #fff;
+  border-color: #48a;
+}

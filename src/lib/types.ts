@@ -60,6 +60,8 @@ export interface WarData {
   readonly defenderTag: string;
   readonly casusBelli: string;
   readonly startDate: number;
+  readonly endDate: number;
+  readonly isEnded: boolean;
   readonly attackerScore: number;
   readonly defenderScore: number;
   readonly participants: readonly WarParticipantData[];
@@ -74,6 +76,25 @@ export interface ParsedSave {
   countryNames: Record<string, string>;
   countryStats: Record<string, CountryEconomyStats>;
   wars: WarData[];
+  trade: {
+    readonly producedGoods: Readonly<Record<string, number>>;
+    readonly markets: readonly {
+      readonly id: number;
+      readonly population: number;
+      readonly price: number;
+      readonly food: number;
+      readonly capacity: number;
+      readonly goods: readonly {
+        readonly name: string;
+        readonly price: number;
+        readonly supply: number;
+        readonly demand: number;
+        readonly surplus: number;
+        readonly stockpile: number;
+        readonly totalProduction: number;
+      }[];
+    }[];
+  };
 }
 
 export interface MapChartGroup {
