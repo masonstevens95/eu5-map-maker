@@ -41,6 +41,31 @@ export interface CountryEconomyStats {
   readonly score: number;
 }
 
+export interface WarParticipantData {
+  readonly tag: string;
+  readonly side: "attacker" | "defender";
+  readonly reason: string;
+}
+
+export interface WarBattleData {
+  readonly location: number;
+  readonly date: number;
+  readonly attackerWon: boolean;
+  readonly attackerLosses: number;
+  readonly defenderLosses: number;
+}
+
+export interface WarData {
+  readonly attackerTag: string;
+  readonly defenderTag: string;
+  readonly casusBelli: string;
+  readonly startDate: number;
+  readonly attackerScore: number;
+  readonly defenderScore: number;
+  readonly participants: readonly WarParticipantData[];
+  readonly battles: readonly WarBattleData[];
+}
+
 export interface ParsedSave {
   countryLocations: Record<string, string[]>;
   tagToPlayers: Record<string, string[]>;
@@ -48,6 +73,7 @@ export interface ParsedSave {
   overlordSubjects: Record<string, Set<string>>;
   countryNames: Record<string, string>;
   countryStats: Record<string, CountryEconomyStats>;
+  wars: WarData[];
 }
 
 export interface MapChartGroup {

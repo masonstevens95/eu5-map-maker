@@ -21,6 +21,7 @@ import { readDiplomacy } from "./sections/diplomacy";
 import { readPlayedCountry } from "./sections/players";
 import { findDependencies } from "./sections/dependencies";
 import { readCountryDatabase } from "./sections/country-stats";
+import { readWars } from "./sections/wars";
 import type { CountryData } from "./sections/country-stats";
 import { readCountryForces } from "./sections/units";
 import { BinaryToken } from "./tokens";
@@ -41,7 +42,7 @@ const emptyParsedSave = (): ParsedSave => ({
   countryColors: {},
   overlordSubjects: {},
   countryNames: {},
-  countryStats: {},
+  countryStats: {}, wars: [],
 });
 
 /**
@@ -252,7 +253,24 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
     };
   }
 
-  return { countryLocations, tagToPlayers, countryColors, overlordSubjects, countryNames, countryStats };
+  // Read wars
+  const rawWars = readWars(data, dynStrings);
+  const wars: import("../types").WarData[] = rawWars.map(w => ({
+    attackerTag: countryTags[w.attackerId] ?? `id:${w.attackerId}`,
+    defenderTag: countryTags[w.defenderId] ?? `id:${w.defenderId}`,
+    casusBelli: w.casusBelli,
+    startDate: w.startDate,
+    attackerScore: w.attackerScore,
+    defenderScore: w.defenderScore,
+    participants: w.participants.map(p => ({
+      tag: countryTags[p.country] ?? `id:${p.country}`,
+      side: p.side,
+      reason: p.reason,
+    })),
+    battles: w.battles,
+  }));
+
+  return { countryLocations, tagToPlayers, countryColors, overlordSubjects, countryNames, countryStats, wars };
 };
 
 // ---------------------------------------------------------------------------

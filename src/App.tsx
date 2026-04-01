@@ -15,6 +15,7 @@ import { MapTab, SHOW_DEBUG } from "./components/MapTab";
 import { RankingsTab } from "./components/RankingsTab";
 import { PlaceholderTab } from "./components/PlaceholderTab";
 import { MilitaryTab } from "./components/MilitaryTab";
+import { WarsTab } from "./components/WarsTab";
 import { buildCountryInfo } from "./lib/country-info";
 import type { CountryInfo } from "./lib/country-info";
 import { findTagProvinceCount } from "./lib/format";
@@ -177,7 +178,7 @@ export default function App() {
             )}
 
             {activeTab === "wars" && (
-              <PlaceholderTab title="Wars" description="Active and past wars — coming soon" />
+              <WarsTab parsed={debug.parsed} />
             )}
           </>
         )}

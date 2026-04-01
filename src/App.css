@@ -1051,3 +1051,140 @@
 .details-section {
   max-width: 900px;
 }
+
+/* Wars Tab */
+.wars-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.war-card {
+  background: #1e1e2e;
+  border-radius: 8px;
+  padding: 1rem;
+  border-left: 4px solid #c44;
+}
+.war-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.75rem;
+}
+.war-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #e0e0e0;
+}
+.war-cb {
+  font-size: 0.75rem;
+  color: #888;
+  font-style: italic;
+}
+.war-sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.war-side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.war-side-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.war-side-attacker .war-side-label { color: #c44; }
+.war-side-defender .war-side-label { color: #48a; }
+.war-side-score {
+  font-size: 0.8rem;
+  color: #aaa;
+}
+.war-side-members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.war-member {
+  font-size: 0.8rem;
+  color: #ccc;
+  background: #2a2a3e;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+}
+.war-footer {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #666;
+}
+.war-card {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.war-card:hover {
+  background: #2a2a3e;
+}
+.war-modal-sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+.war-modal-side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.war-modal-members {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.war-modal-member {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.2rem 0.4rem;
+  background: #2a2a3e;
+  border-radius: 3px;
+  font-size: 0.8rem;
+}
+.war-modal-member-name {
+  color: #ccc;
+}
+.war-modal-member-reason {
+  color: #666;
+  font-size: 0.7rem;
+  font-style: italic;
+}
+.war-battles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.war-battle {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  background: #2a2a3e;
+}
+.war-battle-att-win {
+  border-left: 3px solid #c44;
+}
+.war-battle-def-win {
+  border-left: 3px solid #48a;
+}
+.war-battle-result {
+  color: #ccc;
+}
+.war-battle-losses {
+  color: #888;
+  font-size: 0.75rem;
+}

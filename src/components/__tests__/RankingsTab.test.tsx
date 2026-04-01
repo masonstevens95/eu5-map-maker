@@ -28,6 +28,7 @@ const mockParsed: ParsedSave = {
     FRA: mkStats({ score: 1, population: 800000, monthlyIncome: 200000 }),
     TIM: mkStats({ score: 10, population: 300000, monthlyIncome: 50000 }),
   },
+  wars: [],
 };
 
 describe("RankingsTab", () => {
