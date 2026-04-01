@@ -6,7 +6,7 @@
 
 import type { CountryEconomyStats } from "./types";
 
-export type MilitarySortMode = "regiments" | "ships" | "armyStr" | "navyStr" | "manpower" | "sailors" | "country";
+export type MilitarySortMode = "regulars" | "infantry" | "cavalry" | "artillery" | "levies" | "totalNavy" | "heavyShips" | "manpower" | "country";
 
 export interface MilitaryEntry {
   readonly tag: string;
@@ -16,37 +16,38 @@ export interface MilitaryEntry {
   readonly stats: CountryEconomyStats;
 }
 
+/** Total regular army strength (actual men). */
+export const totalRegulars = (s: CountryEconomyStats): number =>
+  s.infantryStr + s.cavalryStr + s.artilleryStr;
+
+/** Total levy army strength (actual men). */
+export const totalLevies = (s: CountryEconomyStats): number =>
+  s.levyInfantryStr + s.levyCavalryStr;
+
+/** Total navy units (heavy + light + galleys + transports). */
+export const totalNavy = (s: CountryEconomyStats): number =>
+  s.heavyShips + s.lightShips + s.galleys + s.transports;
+
 /** Sort military entries by the chosen mode. */
 export const sortMilitary = (
   entries: readonly MilitaryEntry[],
   mode: MilitarySortMode,
 ): readonly MilitaryEntry[] => {
   const sorted = [...entries];
-  sorted.sort((a, b) => {
-    if (mode === "regiments") {
-      const diff = b.stats.regiments - a.stats.regiments;
-      return diff !== 0 ? diff : a.name.localeCompare(b.name);
-    } else if (mode === "ships") {
-      const diff = b.stats.ships - a.stats.ships;
-      return diff !== 0 ? diff : a.name.localeCompare(b.name);
-    } else if (mode === "armyStr") {
-      const diff = b.stats.armyStrength - a.stats.armyStrength;
-      return diff !== 0 ? diff : a.name.localeCompare(b.name);
-    } else if (mode === "navyStr") {
-      const diff = b.stats.navyStrength - a.stats.navyStrength;
-      return diff !== 0 ? diff : a.name.localeCompare(b.name);
-    } else if (mode === "manpower") {
-      const diff = b.stats.maxManpower - a.stats.maxManpower;
-      return diff !== 0 ? diff : a.name.localeCompare(b.name);
-    } else if (mode === "sailors") {
-      const diff = b.stats.maxSailors - a.stats.maxSailors;
-      return diff !== 0 ? diff : a.name.localeCompare(b.name);
-    } else if (mode === "country") {
-      return a.name.localeCompare(b.name);
-    } else {
-      return 0;
-    }
-  });
+  const byField = (fn: (s: CountryEconomyStats) => number) => (a: MilitaryEntry, b: MilitaryEntry) => {
+    const diff = fn(b.stats) - fn(a.stats);
+    return diff !== 0 ? diff : a.name.localeCompare(b.name);
+  };
+  if (mode === "regulars") { sorted.sort(byField(totalRegulars)); }
+  else if (mode === "infantry") { sorted.sort(byField(s => s.infantryStr)); }
+  else if (mode === "cavalry") { sorted.sort(byField(s => s.cavalryStr)); }
+  else if (mode === "artillery") { sorted.sort(byField(s => s.artilleryStr)); }
+  else if (mode === "levies") { sorted.sort(byField(totalLevies)); }
+  else if (mode === "totalNavy") { sorted.sort(byField(totalNavy)); }
+  else if (mode === "heavyShips") { sorted.sort(byField(s => s.heavyShips)); }
+  else if (mode === "manpower") { sorted.sort(byField(s => s.maxManpower)); }
+  else if (mode === "country") { sorted.sort((a, b) => a.name.localeCompare(b.name)); }
+  else { /* unknown mode */ }
   return sorted;
 };
 
@@ -58,7 +59,7 @@ export const buildMilitaryEntries = (
   countryColors: Readonly<Record<string, readonly [number, number, number]>>,
 ): readonly MilitaryEntry[] =>
   Object.entries(countryStats)
-    .filter(([, s]) => s.regiments > 0 || s.ships > 0 || s.maxManpower > 0)
+    .filter(([, s]) => totalRegulars(s) > 0 || totalLevies(s) > 0 || totalNavy(s) > 0 || s.maxManpower > 0)
     .map(([tag, stats]) => ({
       tag,
       name: countryNames[tag] ?? tag,

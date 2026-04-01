@@ -17,104 +17,93 @@ import { isFixed5, readFixed5 } from "./fixed5";
 // Types
 // =============================================================================
 
+/** Per-category force counts (unit count) and strength (actual men/crew). */
 export interface CountryForces {
-  readonly regiments: number;
-  readonly ships: number;
-  readonly armyStrength: number;
-  readonly navyStrength: number;
+  // Regulars — strength = men
+  readonly infantry: number;
+  readonly cavalry: number;
+  readonly artillery: number;
+  readonly infantryStr: number;
+  readonly cavalryStr: number;
+  readonly artilleryStr: number;
+  // Levies — strength = men
+  readonly levyInfantry: number;
+  readonly levyCavalry: number;
+  readonly levyInfantryStr: number;
+  readonly levyCavalryStr: number;
+  // Navy — strength = crew/capacity
+  readonly heavyShips: number;
+  readonly lightShips: number;
+  readonly galleys: number;
+  readonly transports: number;
 }
+
+// =============================================================================
+// Unit type classification
+// =============================================================================
+
+type ForceCategory = keyof CountryForces;
+
+/** Classify a subunit type string into a force category.
+ *  Type names use a_ prefix for army, n_ prefix for navy.
+ *  Levy units have "_levy" in the name. */
+const classifyType = (type: string): ForceCategory => {
+  // Navy types
+  if (type.startsWith("n_")) {
+    if (/carrack|galleon|war_galleon|atakebune|hulk/i.test(type)) { return "heavyShips"; }
+    else if (/galley|galleass|galiot/i.test(type)) { return "galleys"; }
+    else if (/cog|flute|fishing|dhow|canoe|transport/i.test(type)) { return "transports"; }
+    else { return "lightShips"; } // brig, caravel, pinnace, barque, etc.
+  }
+
+  const isLevy = /_levy/i.test(type);
+
+  // Army types
+  if (/cannon|falconet|houfnice|helepolis|bombard|mortar|culverin/i.test(type)) { return "artillery"; }
+  else if (/supply|convoy|baggage|camp_follower|discovery/i.test(type)) { return isLevy ? "levyInfantry" : "infantry"; }
+  else if (/cavalry|lancer|knight|horsem|cavalier|pistoleer|hussar|cuirassier|dragoon|steppe_horde|retainer|elephant|armored_horse|maurician/i.test(type)) { return isLevy ? "levyCavalry" : "cavalry"; }
+  else { return isLevy ? "levyInfantry" : "infantry"; }
+};
 
 // =============================================================================
 // Token IDs
 // =============================================================================
 
-const UNIT_MGR = tokenId("unit_manager") ?? -1;
 const SUBUNIT_MGR = tokenId("subunit_manager") ?? -1;
 const DATABASE = tokenId("database") ?? -1;
-const IS_ARMY = tokenId("is_army") ?? -1;
 const OWNER = tokenId("owner") ?? -1;
 const STRENGTH = tokenId("strength") ?? -1;
-const UNIT = tokenId("unit") ?? -1;
+const TYPE = 0xe1; // "type" / definition reference field
 
 // =============================================================================
-// Unit manager reader — builds unit ID → isArmy map
+// Subunit manager reader
 // =============================================================================
 
-/** Read unit_manager to determine which unit IDs are armies vs navies.
- *  Units with is_army flag present are armies; absent = navies. */
-const readUnitTypes = (
-  r: TokenReader,
-): Record<number, boolean> => {
-  const unitIsArmy: Record<number, boolean> = {};
-
-  // Expect we're positioned right after unit_manager = {
-  let d = 1;
-  while (!r.done && d > 0) {
-    const ft = r.readToken();
-    if (ft === BinaryToken.CLOSE) { d--; continue; }
-    else if (ft === BinaryToken.OPEN) { d++; continue; }
-    else if (ft === BinaryToken.EQUAL) { continue; }
-    else if (isValueToken(ft)) { r.skipValuePayload(ft); continue; }
-
-    if (d === 1 && ft === DATABASE && r.peekToken() === BinaryToken.EQUAL) {
-      r.readToken(); r.expectOpen();
-
-      while (!r.done) {
-        const peek = r.peekToken();
-        if (peek === BinaryToken.CLOSE) { r.readToken(); break; }
-        if (peek === BinaryToken.I32 || peek === BinaryToken.U32) {
-          r.readToken();
-          const unitId = peek === BinaryToken.I32 ? r.readI32() : r.readU32();
-          r.expectEqual();
-          if (!r.expectOpen()) { r.skipValue(); continue; }
-
-          let hasIsArmy = false;
-          let ed = 1;
-          while (!r.done && ed > 0) {
-            const eft = r.readToken();
-            if (eft === BinaryToken.CLOSE) { ed--; continue; }
-            else if (eft === BinaryToken.OPEN) { ed++; continue; }
-            else if (eft === BinaryToken.EQUAL) { continue; }
-            else if (isValueToken(eft)) { r.skipValuePayload(eft); continue; }
-            if (ed === 1 && eft === IS_ARMY && r.peekToken() === BinaryToken.EQUAL) {
-              hasIsArmy = true;
-              r.readToken(); r.skipValue();
-            } else if (ed === 1 && r.peekToken() === BinaryToken.EQUAL) {
-              r.readToken(); r.skipValue();
-            } else {
-              /* other */
-            }
-          }
-          unitIsArmy[unitId] = hasIsArmy;
-        } else {
-          r.readToken();
-          if (r.peekToken() === BinaryToken.EQUAL) { r.readToken(); r.skipValue(); }
-          else { /* other */ }
-        }
-      }
-      break;
-    } else if (r.peekToken() === BinaryToken.EQUAL) {
-      r.readToken(); r.skipValue();
-    } else {
-      /* other */
-    }
-  }
-
-  return unitIsArmy;
+const EMPTY_FORCES: CountryForces = {
+  infantry: 0, cavalry: 0, artillery: 0,
+  infantryStr: 0, cavalryStr: 0, artilleryStr: 0,
+  levyInfantry: 0, levyCavalry: 0,
+  levyInfantryStr: 0, levyCavalryStr: 0,
+  heavyShips: 0, lightShips: 0, galleys: 0, transports: 0,
 };
 
-// =============================================================================
-// Subunit manager reader — sums strength/count per owner
-// =============================================================================
+/** Map a count category to its strength counterpart. */
+const strKey = (cat: ForceCategory): ForceCategory | null => {
+  if (cat === "infantry") { return "infantryStr"; }
+  else if (cat === "cavalry") { return "cavalryStr"; }
+  else if (cat === "artillery") { return "artilleryStr"; }
+  else if (cat === "levyInfantry") { return "levyInfantryStr"; }
+  else if (cat === "levyCavalry") { return "levyCavalryStr"; }
+  else { return null; } // navy categories don't have separate strength
+};
 
-/** Read subunit_manager to aggregate regiment/ship counts and strength per country tag. */
+/** Read subunit_manager > database, classify each subunit by type, accumulate per owner. */
 const readSubunits = (
   r: TokenReader,
   data: Uint8Array,
   countryTags: Readonly<Record<number, string>>,
-  unitIsArmy: Readonly<Record<number, boolean>>,
 ): Record<string, CountryForces> => {
-  const result: Record<string, { regiments: number; ships: number; armyStr: number; navyStr: number }> = {};
+  const result: Record<string, Record<keyof CountryForces, number>> = {};
 
   let d = 1;
   while (!r.done && d > 0) {
@@ -132,13 +121,13 @@ const readSubunits = (
         if (peek === BinaryToken.CLOSE) { r.readToken(); break; }
         if (peek === BinaryToken.I32 || peek === BinaryToken.U32) {
           r.readToken();
-          peek === BinaryToken.I32 ? r.readI32() : r.readU32(); // subunit id — unused
+          peek === BinaryToken.I32 ? r.readI32() : r.readU32();
           r.expectEqual();
           if (!r.expectOpen()) { r.skipValue(); continue; }
 
           let owner = -1;
-          let strength = 1.0;
-          let unitRef = -1;
+          let typeStr = "";
+          let strength = 0;
           let ed = 1;
           while (!r.done && ed > 0) {
             const eft = r.readToken();
@@ -154,6 +143,11 @@ const readSubunits = (
                 if (ct === BinaryToken.I32) { owner = r.readI32(); }
                 else if (ct === BinaryToken.U32) { owner = r.readU32(); }
                 else { r.skipValuePayload(ct); }
+              } else if (eft === TYPE) {
+                r.readToken();
+                const sv = r.readStringValue();
+                if (sv !== null) { typeStr = sv; }
+                else { r.skipValue(); }
               } else if (eft === STRENGTH) {
                 r.readToken();
                 const vt = r.readToken();
@@ -166,12 +160,6 @@ const readSubunits = (
                 } else {
                   r.skipValuePayload(vt);
                 }
-              } else if (eft === UNIT) {
-                r.readToken();
-                const ct = r.readToken();
-                if (ct === BinaryToken.I32) { unitRef = r.readI32(); }
-                else if (ct === BinaryToken.U32) { unitRef = r.readU32(); }
-                else { r.skipValuePayload(ct); }
               } else {
                 r.readToken(); r.skipValue();
               }
@@ -180,21 +168,24 @@ const readSubunits = (
             }
           }
 
-          if (owner >= 0) {
+          if (owner >= 0 && typeStr !== "") {
             const tag = countryTags[owner] ?? "";
             if (tag !== "") {
-              const isArmy = unitIsArmy[unitRef] ?? true;
-              const entry = result[tag] ?? { regiments: 0, ships: 0, armyStr: 0, navyStr: 0 };
-              if (isArmy) {
-                result[tag] = { ...entry, regiments: entry.regiments + 1, armyStr: entry.armyStr + strength };
+              const category = classifyType(typeStr);
+              const entry = result[tag] ?? { ...EMPTY_FORCES };
+              entry[category] = (entry[category] ?? 0) + 1;
+              const sk = strKey(category);
+              if (sk !== null) {
+                entry[sk] = (entry[sk] ?? 0) + strength;
               } else {
-                result[tag] = { ...entry, ships: entry.ships + 1, navyStr: entry.navyStr + strength };
+                /* navy — no separate strength tracking */
               }
+              result[tag] = entry;
             } else {
-              /* unknown owner tag */
+              /* unknown owner */
             }
           } else {
-            /* no owner */
+            /* missing owner or type */
           }
         } else {
           r.readToken();
@@ -210,10 +201,9 @@ const readSubunits = (
     }
   }
 
-  // Convert to CountryForces
   const forces: Record<string, CountryForces> = {};
-  for (const [tag, d] of Object.entries(result)) {
-    forces[tag] = { regiments: d.regiments, ships: d.ships, armyStrength: d.armyStr, navyStrength: d.navyStr };
+  for (const [tag, counts] of Object.entries(result)) {
+    forces[tag] = { ...counts } as CountryForces;
   }
   return forces;
 };
@@ -222,8 +212,9 @@ const readSubunits = (
 // Public API
 // =============================================================================
 
-/** Scan both unit_manager and subunit_manager sections to build per-country forces.
- *  Requires byte-pattern scanning since these are top-level sections. */
+/** Scan subunit_manager to build per-country force breakdowns.
+ *  Classifies each subunit by its type name into infantry/cavalry/artillery/auxiliary
+ *  or heavy ships/light ships/galleys/transports. */
 export const readCountryForces = (
   data: Uint8Array,
   dynStrings: string[],
@@ -231,30 +222,8 @@ export const readCountryForces = (
 ): Record<string, CountryForces> => {
   const r = new TokenReader(data, dynStrings);
 
-  // Pass 1: unit_manager — map unit IDs to army/navy
-  let unitIsArmy: Record<number, boolean> = {};
   r.pos = 0;
   let depth = 0;
-  while (!r.done) {
-    const ft = r.readToken();
-    if (ft === BinaryToken.CLOSE) { depth--; continue; }
-    else if (ft === BinaryToken.OPEN) { depth++; continue; }
-    else if (ft === BinaryToken.EQUAL) { continue; }
-    else if (isValueToken(ft)) { r.skipValuePayload(ft); continue; }
-    if (depth === 0 && ft === UNIT_MGR && r.peekToken() === BinaryToken.EQUAL) {
-      r.readToken();
-      if (r.expectOpen()) {
-        unitIsArmy = readUnitTypes(r);
-      }
-      break;
-    } else {
-      /* other */
-    }
-  }
-
-  // Pass 2: subunit_manager — sum regiments/ships per owner
-  r.pos = 0;
-  depth = 0;
   while (!r.done) {
     const ft = r.readToken();
     if (ft === BinaryToken.CLOSE) { depth--; continue; }
@@ -264,7 +233,7 @@ export const readCountryForces = (
     if (depth === 0 && ft === SUBUNIT_MGR && r.peekToken() === BinaryToken.EQUAL) {
       r.readToken();
       if (r.expectOpen()) {
-        return readSubunits(r, data, countryTags, unitIsArmy);
+        return readSubunits(r, data, countryTags);
       } else {
         return {};
       }

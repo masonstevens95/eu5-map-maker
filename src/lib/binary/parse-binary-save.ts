@@ -216,16 +216,26 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
   // Build countryStats from country database + forces
   const countryStats: Record<string, import("../types").CountryEconomyStats> = {};
   for (const [tag, cd] of Object.entries(countryDb)) {
-    const f = forces[tag] ?? { regiments: 0, ships: 0, armyStrength: 0, navyStrength: 0 };
+    const f = forces[tag];
     countryStats[tag] = {
       gold: cd.economy.gold,
       monthlyIncome: cd.economy.monthlyIncome,
       monthlyTradeValue: cd.economy.monthlyTradeValue,
       population: cd.economy.population,
-      regiments: f.regiments,
-      ships: f.ships,
-      armyStrength: f.armyStrength,
-      navyStrength: f.navyStrength,
+      infantry: f?.infantry ?? 0,
+      cavalry: f?.cavalry ?? 0,
+      artillery: f?.artillery ?? 0,
+      infantryStr: f?.infantryStr ?? 0,
+      cavalryStr: f?.cavalryStr ?? 0,
+      artilleryStr: f?.artilleryStr ?? 0,
+      levyInfantry: f?.levyInfantry ?? 0,
+      levyCavalry: f?.levyCavalry ?? 0,
+      levyInfantryStr: f?.levyInfantryStr ?? 0,
+      levyCavalryStr: f?.levyCavalryStr ?? 0,
+      heavyShips: f?.heavyShips ?? 0,
+      lightShips: f?.lightShips ?? 0,
+      galleys: f?.galleys ?? 0,
+      transports: f?.transports ?? 0,
       maxManpower: cd.military.maxManpower,
       maxSailors: cd.military.maxSailors,
       monthlyManpower: cd.military.monthlyManpower,
