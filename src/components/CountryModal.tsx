@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { CountryInfo } from "../lib/country-info";
 import { resolveDisplayName } from "../lib/country-info";
-import { fmtNum, fmtLanguage, fmtGovType } from "../lib/format";
+import { fmtNum, fmtCurrency, fmtLanguage, fmtGovType } from "../lib/format";
 import { isGreatPower } from "../lib/ranking-sort";
 
 interface Props {
@@ -102,15 +102,15 @@ export const CountryModal = ({ info, countryNames, onClose }: Props) => {
           {/* Economy */}
           <div className="modal-stats-grid">
             <div className="modal-stat">
-              <span className="modal-stat-value">{fmtNum(stats.gold)}</span>
+              <span className="modal-stat-value">{fmtCurrency(stats.gold)}</span>
               <span className="modal-stat-label">Treasury</span>
             </div>
             <div className="modal-stat">
-              <span className="modal-stat-value">{fmtNum(stats.monthlyIncome)}</span>
+              <span className="modal-stat-value">{fmtCurrency(stats.monthlyIncome)}</span>
               <span className="modal-stat-label">Monthly Income</span>
             </div>
             <div className="modal-stat">
-              <span className="modal-stat-value">{fmtNum(stats.monthlyTradeValue)}</span>
+              <span className="modal-stat-value">{fmtCurrency(stats.monthlyTradeValue)}</span>
               <span className="modal-stat-label">Trade Value</span>
             </div>
             <div className="modal-stat">
@@ -119,43 +119,43 @@ export const CountryModal = ({ info, countryNames, onClose }: Props) => {
             </div>
           </div>
 
-          {/* Military — Regulars (strength = men) */}
+          {/* Military — Army */}
           <div className="modal-stats-grid">
             <div className="modal-stat">
-              <span className="modal-stat-value">{fmtNum(stats.infantryStr)}</span>
-              <span className="modal-stat-label">Infantry</span>
+              <span className="modal-stat-value">{fmtNum(stats.infantryStr + stats.cavalryStr + stats.artilleryStr)}</span>
+              <span className="modal-stat-label">Regular Strength <span className="modal-info" title="Strength is the combat power of each regiment, not a headcount. Different unit types (infantry, cavalry, artillery) have different strength values per regiment.">i</span></span>
             </div>
             <div className="modal-stat">
-              <span className="modal-stat-value">{fmtNum(stats.cavalryStr)}</span>
-              <span className="modal-stat-label">Cavalry</span>
-            </div>
-            <div className="modal-stat">
-              <span className="modal-stat-value">{fmtNum(stats.artilleryStr)}</span>
-              <span className="modal-stat-label">Artillery</span>
+              <span className="modal-stat-value">{stats.infantry}/{stats.cavalry}/{stats.artillery}</span>
+              <span className="modal-stat-label">Inf/Cav/Art</span>
             </div>
             <div className="modal-stat">
               <span className="modal-stat-value">{fmtNum(stats.levyInfantryStr + stats.levyCavalryStr)}</span>
-              <span className="modal-stat-label">Levies</span>
+              <span className="modal-stat-label">Raised Levies</span>
+            </div>
+            <div className="modal-stat">
+              <span className="modal-stat-value">{fmtNum(stats.maxManpower)}</span>
+              <span className="modal-stat-label">Manpower</span>
             </div>
           </div>
 
           {/* Military — Navy */}
           <div className="modal-stats-grid">
             <div className="modal-stat">
-              <span className="modal-stat-value">{fmtNum(stats.heavyShips)}</span>
-              <span className="modal-stat-label">Heavy Ships</span>
+              <span className="modal-stat-value">{fmtNum(stats.navyFrontage)}</span>
+              <span className="modal-stat-label">Navy Frontage</span>
             </div>
             <div className="modal-stat">
-              <span className="modal-stat-value">{fmtNum(stats.lightShips)}</span>
-              <span className="modal-stat-label">Light Ships</span>
-            </div>
-            <div className="modal-stat">
-              <span className="modal-stat-value">{fmtNum(stats.galleys)}</span>
-              <span className="modal-stat-label">Galleys</span>
+              <span className="modal-stat-value">{stats.heavyShips}/{stats.lightShips}/{stats.galleys}</span>
+              <span className="modal-stat-label">Heavy/Light/Galley</span>
             </div>
             <div className="modal-stat">
               <span className="modal-stat-value">{fmtNum(stats.transports)}</span>
               <span className="modal-stat-label">Transports</span>
+            </div>
+            <div className="modal-stat">
+              <span className="modal-stat-value">{fmtNum(stats.maxSailors)}</span>
+              <span className="modal-stat-label">Sailors</span>
             </div>
           </div>
 

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import type { ParsedSave } from "../lib/types";
-import { buildRankingEntries, sortRankings, filterPlayersOnly, isGreatPower, findTiedScores } from "../lib/ranking-sort";
-import type { RankingSortMode } from "../lib/ranking-sort";
+import { buildEconomyEntries, sortEconomy } from "../lib/economy-sort";
+import type { EconomySortMode } from "../lib/economy-sort";
+import { filterPlayersOnly } from "../lib/ranking-sort";
 import { fmtNum, fmtCurrency } from "../lib/format";
 
 interface Props {
@@ -9,20 +10,18 @@ interface Props {
   onCountryClick: (tag: string) => void;
 }
 
-export const RankingsTab = ({ parsed, onCountryClick }: Props) => {
-  const [sortMode, setSortMode] = useState<RankingSortMode>("rank");
+export const EconomyTab = ({ parsed, onCountryClick }: Props) => {
+  const [sortMode, setSortMode] = useState<EconomySortMode>("income");
   const [playersOnly, setPlayersOnly] = useState(false);
-  const [highlightGP, setHighlightGP] = useState(true);
 
-  const allEntries = buildRankingEntries(
+  const allEntries = buildEconomyEntries(
     parsed.countryStats,
     parsed.countryNames,
     parsed.tagToPlayers,
     parsed.countryColors,
   );
   const filtered = filterPlayersOnly(allEntries, playersOnly);
-  const sorted = sortRankings(filtered, sortMode);
-  const tiedScores = findTiedScores(allEntries);
+  const sorted = sortEconomy(filtered, sortMode);
 
   return (
     <div className="rankings-tab">
@@ -31,14 +30,15 @@ export const RankingsTab = ({ parsed, onCountryClick }: Props) => {
           Sort:
           <select
             value={sortMode}
-            onChange={(e) => setSortMode(e.target.value as RankingSortMode)}
+            onChange={(e) => setSortMode(e.target.value as EconomySortMode)}
             className="style-select"
           >
-            <option value="rank">Rank</option>
-            <option value="country">Country Name</option>
-            <option value="player">Player Name</option>
+            <option value="income">Monthly Income</option>
+            <option value="trade">Trade Value</option>
+            <option value="treasury">Treasury</option>
             <option value="population">Population</option>
-            <option value="income">Income</option>
+            <option value="maintenance">Military Cost</option>
+            <option value="country">Country Name</option>
           </select>
         </label>
         <label className="option">
@@ -49,14 +49,6 @@ export const RankingsTab = ({ parsed, onCountryClick }: Props) => {
           />
           Players only
         </label>
-        <label className="option">
-          <input
-            type="checkbox"
-            checked={highlightGP}
-            onChange={(e) => setHighlightGP(e.target.checked)}
-          />
-          Highlight Great Powers
-        </label>
       </div>
       <div className="rankings-grid">
         {sorted.map((entry, i) => (
@@ -64,8 +56,7 @@ export const RankingsTab = ({ parsed, onCountryClick }: Props) => {
             key={entry.tag}
             className={
               `ranking-row` +
-              `${entry.players.length > 0 ? " ranking-player" : ""}` +
-              `${highlightGP && isGreatPower(entry.stats.score) ? " ranking-gp" : ""}`
+              `${entry.players.length > 0 ? " ranking-player" : ""}`
             }
             style={{ borderLeftColor: entry.color }}
             onClick={() => onCountryClick(entry.tag)}
@@ -81,24 +72,20 @@ export const RankingsTab = ({ parsed, onCountryClick }: Props) => {
             </div>
             <div className="ranking-stats">
               <div className="ranking-stat">
-                <span className="ranking-stat-val">
-                  {entry.stats.score > 0
-                    ? `#${entry.stats.score}${tiedScores.has(entry.stats.score) ? " (tied)" : ""}`
-                    : "—"}
-                </span>
-                <span className="ranking-stat-lbl">Rank</span>
-              </div>
-              <div className="ranking-stat">
-                <span className="ranking-stat-val">{fmtNum(entry.stats.population)}</span>
-                <span className="ranking-stat-lbl">Pop</span>
-              </div>
-              <div className="ranking-stat">
                 <span className="ranking-stat-val">{fmtCurrency(entry.stats.monthlyIncome)}</span>
                 <span className="ranking-stat-lbl">Income</span>
               </div>
               <div className="ranking-stat">
-                <span className="ranking-stat-val">{fmtNum(entry.stats.maxManpower)}</span>
-                <span className="ranking-stat-lbl">Manpower</span>
+                <span className="ranking-stat-val">{fmtCurrency(entry.stats.monthlyTradeValue)}</span>
+                <span className="ranking-stat-lbl">Trade</span>
+              </div>
+              <div className="ranking-stat">
+                <span className="ranking-stat-val">{fmtCurrency(entry.stats.gold)}</span>
+                <span className="ranking-stat-lbl">Treasury</span>
+              </div>
+              <div className="ranking-stat">
+                <span className="ranking-stat-val">{fmtNum(entry.stats.population)}</span>
+                <span className="ranking-stat-lbl">Population</span>
               </div>
             </div>
           </div>

@@ -9,7 +9,7 @@ const mockParsed: ParsedSave = {
   tagToPlayers: { ENG: ["Alice"] },
   countryColors: { ENG: [255, 0, 0], FRA: [0, 0, 255] },
   overlordSubjects: { ENG: new Set(["SCO", "WLS"]) },
-  countryNames: {}, countryStats: {},
+  countryNames: {}, countryStats: {}, wars: [], trade: { producedGoods: {}, markets: [] },
 };
 
 const mockConfig = {

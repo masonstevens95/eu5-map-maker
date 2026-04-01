@@ -13,8 +13,10 @@ import { CountryModal } from "./components/CountryModal";
 import { AppHeader } from "./components/AppHeader";
 import { MapTab, SHOW_DEBUG } from "./components/MapTab";
 import { RankingsTab } from "./components/RankingsTab";
-import { PlaceholderTab } from "./components/PlaceholderTab";
+import { EconomyTab } from "./components/EconomyTab";
 import { MilitaryTab } from "./components/MilitaryTab";
+import { TradeTab } from "./components/TradeTab";
+import { WarsTab } from "./components/WarsTab";
 import { buildCountryInfo } from "./lib/country-info";
 import type { CountryInfo } from "./lib/country-info";
 import { findTagProvinceCount } from "./lib/format";
@@ -165,11 +167,11 @@ export default function App() {
             )}
 
             {activeTab === "economy" && (
-              <PlaceholderTab title="Economy" description="Country economy rankings and comparison — coming soon" />
+              <EconomyTab parsed={debug.parsed} onCountryClick={handleCountryClick} />
             )}
 
             {activeTab === "trade" && (
-              <PlaceholderTab title="Trade" description="Trade routes and values — coming soon" />
+              <TradeTab parsed={debug.parsed} />
             )}
 
             {activeTab === "military" && (
@@ -177,7 +179,7 @@ export default function App() {
             )}
 
             {activeTab === "wars" && (
-              <PlaceholderTab title="Wars" description="Active and past wars — coming soon" />
+              <WarsTab parsed={debug.parsed} />
             )}
           </>
         )}

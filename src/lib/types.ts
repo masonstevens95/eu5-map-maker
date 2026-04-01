@@ -23,6 +23,9 @@ export interface CountryEconomyStats {
   readonly lightShips: number;
   readonly galleys: number;
   readonly transports: number;
+  // Military — frontage (combat width from unit_manager)
+  readonly armyFrontage: number;
+  readonly navyFrontage: number;
   // Military — capacity (from country database)
   readonly maxManpower: number;
   readonly maxSailors: number;
@@ -38,6 +41,33 @@ export interface CountryEconomyStats {
   readonly score: number;
 }
 
+export interface WarParticipantData {
+  readonly tag: string;
+  readonly side: "attacker" | "defender";
+  readonly reason: string;
+}
+
+export interface WarBattleData {
+  readonly location: number;
+  readonly date: number;
+  readonly attackerWon: boolean;
+  readonly attackerLosses: number;
+  readonly defenderLosses: number;
+}
+
+export interface WarData {
+  readonly attackerTag: string;
+  readonly defenderTag: string;
+  readonly casusBelli: string;
+  readonly startDate: number;
+  readonly endDate: number;
+  readonly isEnded: boolean;
+  readonly attackerScore: number;
+  readonly defenderScore: number;
+  readonly participants: readonly WarParticipantData[];
+  readonly battles: readonly WarBattleData[];
+}
+
 export interface ParsedSave {
   countryLocations: Record<string, string[]>;
   tagToPlayers: Record<string, string[]>;
@@ -45,6 +75,26 @@ export interface ParsedSave {
   overlordSubjects: Record<string, Set<string>>;
   countryNames: Record<string, string>;
   countryStats: Record<string, CountryEconomyStats>;
+  wars: WarData[];
+  trade: {
+    readonly producedGoods: Readonly<Record<string, number>>;
+    readonly markets: readonly {
+      readonly id: number;
+      readonly population: number;
+      readonly price: number;
+      readonly food: number;
+      readonly capacity: number;
+      readonly goods: readonly {
+        readonly name: string;
+        readonly price: number;
+        readonly supply: number;
+        readonly demand: number;
+        readonly surplus: number;
+        readonly stockpile: number;
+        readonly totalProduction: number;
+      }[];
+    }[];
+  };
 }
 
 export interface MapChartGroup {

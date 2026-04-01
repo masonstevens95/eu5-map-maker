@@ -33,13 +33,15 @@ export const MilitaryTab = ({ parsed, onCountryClick }: Props) => {
             onChange={(e) => setSortMode(e.target.value as MilitarySortMode)}
             className="style-select"
           >
-            <option value="regulars">Regulars</option>
+            <option value="regulars">Regular Strength</option>
             <option value="infantry">Infantry</option>
             <option value="cavalry">Cavalry</option>
             <option value="artillery">Artillery</option>
-            <option value="levies">Levies</option>
-            <option value="totalNavy">Total Navy</option>
+            <option value="levies">Raised Levies</option>
+            <option value="armyFrontage">Army Frontage</option>
+            <option value="totalNavy">Total Ships</option>
             <option value="heavyShips">Heavy Ships</option>
+            <option value="navyFrontage">Navy Frontage</option>
             <option value="manpower">Max Manpower</option>
             <option value="country">Country Name</option>
           </select>
@@ -82,14 +84,12 @@ export const MilitaryTab = ({ parsed, onCountryClick }: Props) => {
                   <span className="ranking-stat-lbl">Regulars</span>
                 </div>
                 <div className="ranking-stat">
-                  <span className="ranking-stat-val">
-                    {fmtNum(entry.stats.infantryStr)}/{fmtNum(entry.stats.cavalryStr)}/{fmtNum(entry.stats.artilleryStr)}
-                  </span>
-                  <span className="ranking-stat-lbl">Inf/Cav/Art</span>
+                  <span className="ranking-stat-val">{fmtNum(levies)}</span>
+                  <span className="ranking-stat-lbl">Raised Levies</span>
                 </div>
                 <div className="ranking-stat">
-                  <span className="ranking-stat-val">{fmtNum(levies)}</span>
-                  <span className="ranking-stat-lbl">Levies</span>
+                  <span className="ranking-stat-val">{fmtNum(entry.stats.armyFrontage)}</span>
+                  <span className="ranking-stat-lbl">Frontage</span>
                 </div>
                 <div className="ranking-stat">
                   <span className="ranking-stat-val">{fmtNum(entry.stats.heavyShips + entry.stats.lightShips + entry.stats.galleys)}</span>

@@ -10,6 +10,7 @@ const mkStats = (overrides: Partial<CountryEconomyStats> = {}): CountryEconomySt
   levyInfantry: 0, levyCavalry: 0,
   levyInfantryStr: 0, levyCavalryStr: 0,
   heavyShips: 0, lightShips: 0, galleys: 0, transports: 0,
+  armyFrontage: 0, navyFrontage: 0,
   maxManpower: 0, maxSailors: 0, monthlyManpower: 0, monthlySailors: 0,
   armyMaintenance: 0, navyMaintenance: 0,
   expectedArmySize: 0, expectedNavySize: 0,
@@ -27,6 +28,8 @@ const mockParsed: ParsedSave = {
     FRA: mkStats({ score: 1, population: 800000, monthlyIncome: 200000 }),
     TIM: mkStats({ score: 10, population: 300000, monthlyIncome: 50000 }),
   },
+  wars: [],
+  trade: { producedGoods: {}, markets: [] },
 };
 
 describe("RankingsTab", () => {

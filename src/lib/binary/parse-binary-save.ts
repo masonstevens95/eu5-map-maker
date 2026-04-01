@@ -21,6 +21,8 @@ import { readDiplomacy } from "./sections/diplomacy";
 import { readPlayedCountry } from "./sections/players";
 import { findDependencies } from "./sections/dependencies";
 import { readCountryDatabase } from "./sections/country-stats";
+import { readWars } from "./sections/wars";
+import { readTradeData } from "./sections/trade";
 import type { CountryData } from "./sections/country-stats";
 import { readCountryForces } from "./sections/units";
 import { BinaryToken } from "./tokens";
@@ -41,7 +43,7 @@ const emptyParsedSave = (): ParsedSave => ({
   countryColors: {},
   overlordSubjects: {},
   countryNames: {},
-  countryStats: {},
+  countryStats: {}, wars: [], trade: { producedGoods: {}, markets: [] },
 });
 
 /**
@@ -236,6 +238,8 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
       lightShips: f?.lightShips ?? 0,
       galleys: f?.galleys ?? 0,
       transports: f?.transports ?? 0,
+      armyFrontage: f?.armyFrontage ?? 0,
+      navyFrontage: f?.navyFrontage ?? 0,
       maxManpower: cd.military.maxManpower,
       maxSailors: cd.military.maxSailors,
       monthlyManpower: cd.military.monthlyManpower,
@@ -250,7 +254,29 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
     };
   }
 
-  return { countryLocations, tagToPlayers, countryColors, overlordSubjects, countryNames, countryStats };
+  // Read wars
+  const rawWars = readWars(data, dynStrings);
+  const wars: import("../types").WarData[] = rawWars.map(w => ({
+    attackerTag: countryTags[w.attackerId] ?? `id:${w.attackerId}`,
+    defenderTag: countryTags[w.defenderId] ?? `id:${w.defenderId}`,
+    casusBelli: w.casusBelli,
+    startDate: w.startDate,
+    endDate: w.endDate,
+    isEnded: w.isEnded,
+    attackerScore: w.attackerScore,
+    defenderScore: w.defenderScore,
+    participants: w.participants.map(p => ({
+      tag: countryTags[p.country] ?? `id:${p.country}`,
+      side: p.side,
+      reason: p.reason,
+    })),
+    battles: w.battles,
+  }));
+
+  // Read trade data
+  const trade = readTradeData(data, dynStrings);
+
+  return { countryLocations, tagToPlayers, countryColors, overlordSubjects, countryNames, countryStats, wars, trade };
 };
 
 // ---------------------------------------------------------------------------
