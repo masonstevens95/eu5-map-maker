@@ -19,7 +19,6 @@ const fmtVal = (n: number): string =>
     : "—";
 
 type MarketType = ParsedSave["trade"]["markets"][number];
-type GoodType = MarketType["goods"][number];
 
 type TradeSubTab = "goods" | "markets";
 

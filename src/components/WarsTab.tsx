@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { ParsedSave, WarData, WarParticipantData, WarBattleData } from "../lib/types";
+import type { ParsedSave, WarData, WarParticipantData } from "../lib/types";
 
 interface Props {
   parsed: ParsedSave;

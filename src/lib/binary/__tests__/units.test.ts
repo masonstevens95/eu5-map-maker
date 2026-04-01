@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readCountryForces } from "../sections/units";
-import { u16, i32, eq, open, close, bytes, intVal, uintVal, block } from "./helpers";
+import { u16, eq, open, close, bytes, intVal, uintVal } from "./helpers";
 import { BinaryToken } from "../tokens";
 
 // Token IDs (from eu5-tokens.json)

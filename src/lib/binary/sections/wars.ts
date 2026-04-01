@@ -67,7 +67,6 @@ const RESULT = tokenId("result") ?? -1;
 const ATTACKER = tokenId("attacker") ?? -1;
 const DEFENDER = tokenId("defender") ?? -1;
 const LOSSES = tokenId("losses") ?? -1;
-const REQUEST = tokenId("request") ?? -1;
 
 // =============================================================================
 // Readers

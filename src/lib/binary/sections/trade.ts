@@ -147,9 +147,7 @@ const readMarketGoods = (r: TokenReader, data: Uint8Array): MarketGood[] => {
     }
     else if (ft === BinaryToken.EQUAL) { continue; }
     else if (ft === BinaryToken.QUOTED || ft === BinaryToken.UNQUOTED) {
-      const len = r.view.getUint16(r.pos, true); r.pos += 2;
-      pendingName = new TextDecoder().decode(data.subarray(r.pos, r.pos + len));
-      r.pos += len;
+      pendingName = r.readString();
     } else if (ft === BinaryToken.LOOKUP_U8) { pendingName = r.readLookupU8(); }
     else if (ft === BinaryToken.LOOKUP_U16) { pendingName = r.readLookupU16(); }
     else if (ft === BinaryToken.LOOKUP_U24) { pendingName = r.readLookupU24(); }

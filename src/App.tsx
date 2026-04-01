@@ -13,7 +13,6 @@ import { CountryModal } from "./components/CountryModal";
 import { AppHeader } from "./components/AppHeader";
 import { MapTab, SHOW_DEBUG } from "./components/MapTab";
 import { RankingsTab } from "./components/RankingsTab";
-import { PlaceholderTab } from "./components/PlaceholderTab";
 import { EconomyTab } from "./components/EconomyTab";
 import { MilitaryTab } from "./components/MilitaryTab";
 import { TradeTab } from "./components/TradeTab";
