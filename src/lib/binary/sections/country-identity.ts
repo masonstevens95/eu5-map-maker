@@ -18,6 +18,8 @@ export interface CountryIdentity {
   readonly level: number;
   readonly govType: string;
   readonly courtLanguage: string;
+  readonly primaryCulture: string;
+  readonly religion: string;
   readonly score: number;
 }
 
@@ -30,6 +32,8 @@ const LEVEL = tokenId("level") ?? -1;
 const GOVERNMENT = tokenId("government") ?? -1;
 const TYPE_ENGINE = 0x00e1;
 const COURT_LANG = tokenId("court_language") ?? -1;
+const PRIMARY_CULTURE = tokenId("primary_culture") ?? -1;
+const RELIGION = tokenId("religion") ?? -1;
 const SCORE = tokenId("score") ?? -1;
 const SCORE_PLACE = tokenId("score_place") ?? -1;
 const GREAT_POWER_RANK = tokenId("great_power_rank") ?? -1;
@@ -43,6 +47,8 @@ export const emptyIdentity = (): CountryIdentity => ({
   level: -1,
   govType: "",
   courtLanguage: "",
+  primaryCulture: "",
+  religion: "",
   score: 0,
 });
 
@@ -55,6 +61,8 @@ export const IDENTITY_FIELDS = {
   LEVEL,
   GOVERNMENT,
   COURT_LANG,
+  PRIMARY_CULTURE,
+  RELIGION,
   SCORE,
   GREAT_POWER_RANK,
 } as const;
@@ -72,6 +80,8 @@ export const readIdentityAtOffsets = (
     readonly levelOffset: number;
     readonly govOffset: number;
     readonly courtLangOffset: number;
+    readonly cultureOffset: number;
+    readonly religionOffset: number;
     readonly scoreOffset: number;
     readonly gpRankOffset: number;
   },
@@ -133,6 +143,22 @@ export const readIdentityAtOffsets = (
     r.readToken(); r.expectEqual();
     const lang = r.readStringValue() ?? "";
     identity = { ...identity, courtLanguage: lang };
+  }
+
+  // Primary culture
+  if (offsets.cultureOffset >= 0) {
+    r.pos = offsets.cultureOffset;
+    r.readToken(); r.expectEqual();
+    const culture = r.readStringValue() ?? "";
+    identity = { ...identity, primaryCulture: culture };
+  }
+
+  // Religion
+  if (offsets.religionOffset >= 0) {
+    r.pos = offsets.religionOffset;
+    r.readToken(); r.expectEqual();
+    const rel = r.readStringValue() ?? "";
+    identity = { ...identity, religion: rel };
   }
 
   // Score / rank

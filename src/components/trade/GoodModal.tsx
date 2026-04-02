@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { ParsedSave } from "../../lib/types";
 import {
   type DetailSortMode,
+  type MarketGoodEntry,
   fmtGood,
   fmtVal,
   fmtSurplus,
@@ -18,6 +19,23 @@ interface Props {
   marketNames: Readonly<Record<number, string>>;
   onClose: () => void;
 }
+
+/** Compute the max of a numeric field across entries (minimum 1 to avoid division by zero). */
+const maxOf = (entries: readonly MarketGoodEntry[], fn: (g: MarketGoodEntry) => number): number =>
+  entries.reduce((mx, g) => Math.max(mx, fn(g)), 0) || 1;
+
+/** A table cell with a proportional bar behind the text. */
+const BarCell = ({ value, label, max, color }: {
+  value: number;
+  label: string;
+  max: number;
+  color: string;
+}) => (
+  <span className="trade-bar-cell">
+    <span className="trade-bar" style={{ width: `${(value / max) * 100}%`, background: color }} />
+    <span className="trade-bar-label">{label}</span>
+  </span>
+);
 
 export const GoodModal = ({ goodName, markets, marketNames, onClose }: Props) => {
   const [detailSort, setDetailSort] = useState<DetailSortMode>("supply");
@@ -41,6 +59,10 @@ export const GoodModal = ({ goodName, markets, marketNames, onClose }: Props) =>
   const avgPrice = allGoods.length > 0
     ? allGoods.reduce((s, g) => s + g.price, 0) / allGoods.length
     : 0;
+
+  const maxPrice = maxOf(allGoods, g => g.price);
+  const maxSupply = maxOf(allGoods, g => g.supply);
+  const maxDemand = maxOf(allGoods, g => g.demand);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -85,9 +107,9 @@ export const GoodModal = ({ goodName, markets, marketNames, onClose }: Props) =>
             {sorted.map((mg) => (
               <div key={mg.marketId} className="trade-market-row">
                 <span>{marketName(mg.marketId, marketNames)}</span>
-                <span>{mg.price.toFixed(2)}</span>
-                <span>{fmtVal(mg.supply)}</span>
-                <span>{fmtVal(mg.demand)}</span>
+                <BarCell value={mg.price} label={mg.price.toFixed(2)} max={maxPrice} color="#48a" />
+                <BarCell value={mg.supply} label={fmtVal(mg.supply)} max={maxSupply} color="#4a8" />
+                <BarCell value={mg.demand} label={fmtVal(mg.demand)} max={maxDemand} color="#a84" />
                 <span className={surplusClass(mg.surplus)}>
                   {fmtSurplus(mg.surplus)}
                 </span>

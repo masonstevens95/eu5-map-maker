@@ -2,8 +2,8 @@ import type { ParsedSave } from "./types";
 
 // ─── Sort mode types ───────────────────────────────────────────────────────
 
-export type GoodSortMode = "production" | "name" | "price" | "supply" | "demand" | "markets";
-export type MarketSortMode = "population" | "price" | "food" | "capacity" | "goods";
+export type GoodSortMode = "production" | "name" | "price" | "supply" | "demand" | "surplus" | "markets";
+export type MarketSortMode = "population" | "price" | "food" | "capacity" | "goods" | "totalProduction";
 export type DetailSortMode = "supply" | "price" | "demand" | "surplus" | "stockpile" | "totalProduction";
 
 // ─── Domain types ──────────────────────────────────────────────────────────
@@ -62,6 +62,41 @@ export const fmtDialect = (d: string): string =>
 export const capacityPct = (population: number, capacity: number): string =>
   capacity > 0 ? ((population / capacity) * 100).toFixed(1) + "%" : "—";
 
+
+/** Filter produced goods keys by search term matched against formatted name. */
+export const filterGoods = (
+  producedGoods: Readonly<Record<string, number>>,
+  query: string,
+): Record<string, number> => {
+  if (query === "") { return { ...producedGoods }; }
+  const q = query.toLowerCase();
+  const result: Record<string, number> = {};
+  for (const key of Object.keys(producedGoods)) {
+    if (fmtGood(key).toLowerCase().includes(q)) {
+      result[key] = producedGoods[key];
+    }
+  }
+  return result;
+};
+
+/** Filter markets by search term matched against market name or owner name. */
+export const filterMarkets = (
+  markets: ParsedSave["trade"]["markets"],
+  marketNames: Readonly<Record<number, string>>,
+  marketOwners: Readonly<Record<number, string>>,
+  countryNames: Readonly<Record<string, string>>,
+  query: string,
+): ParsedSave["trade"]["markets"] => {
+  if (query === "") { return [...markets]; }
+  const q = query.toLowerCase();
+  return markets.filter(m => {
+    const name = marketName(m.id, marketNames).toLowerCase();
+    const ownerTag = marketOwners[m.id] ?? "";
+    const owner = (countryNames[ownerTag] ?? ownerTag).toLowerCase();
+    return name.includes(q) || owner.includes(q);
+  });
+};
+
 // ─── Data helpers ──────────────────────────────────────────────────────────
 
 /** Build aggregate stats per good across all markets. */
@@ -109,6 +144,7 @@ export const sortGoodStats = (
     else if (mode === "supply") { return m * (a.totalSupply - b.totalSupply); }
     else if (mode === "demand") { return m * (a.totalDemand - b.totalDemand); }
     else if (mode === "price") { return m * (a.avgPrice - b.avgPrice); }
+    else if (mode === "surplus") { return m * (a.totalSurplus - b.totalSurplus); }
     else if (mode === "markets") { return m * (a.marketCount - b.marketCount); }
     else { return m * a.name.localeCompare(b.name); }
   });
@@ -126,6 +162,11 @@ export const sortMarkets = (
     else if (mode === "price") { return m * (a.price - b.price); }
     else if (mode === "food") { return m * (a.food - b.food); }
     else if (mode === "capacity") { return m * (a.capacity - b.capacity); }
+    else if (mode === "totalProduction") {
+      const aProd = a.goods.reduce((s, g) => s + g.totalProduction, 0);
+      const bProd = b.goods.reduce((s, g) => s + g.totalProduction, 0);
+      return m * (aProd - bProd);
+    }
     else { return m * (a.goods.length - b.goods.length); }
   });
 };

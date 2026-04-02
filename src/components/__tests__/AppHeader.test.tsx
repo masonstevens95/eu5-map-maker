@@ -5,7 +5,7 @@ import { AppHeader } from "../AppHeader";
 describe("AppHeader", () => {
   it("renders title", () => {
     const { container } = render(<AppHeader showTabs={false} activeTab="map" onTabChange={() => {}} />);
-    expect(within(container).getByText("EU5 Map Maker")).toBeInTheDocument();
+    expect(within(container).getByText("Vespucci")).toBeInTheDocument();
   });
 
   it("renders BMC link", () => {
@@ -32,10 +32,10 @@ describe("AppHeader", () => {
     expect(container.querySelector(".app-tabs")).toBeInTheDocument();
   });
 
-  it("renders all 6 tab buttons", () => {
+  it("renders all 5 tab buttons", () => {
     const { container } = render(<AppHeader showTabs={true} activeTab="map" onTabChange={() => {}} />);
     const tabs = container.querySelectorAll(".app-tab");
-    expect(tabs).toHaveLength(6);
+    expect(tabs).toHaveLength(5);
   });
 
   it("marks active tab", () => {

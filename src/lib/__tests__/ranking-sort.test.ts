@@ -10,7 +10,7 @@ import type { RankingEntry } from "../ranking-sort";
 import type { CountryEconomyStats } from "../types";
 
 const mkStats = (overrides: Partial<CountryEconomyStats> = {}): CountryEconomyStats => ({
-  gold: 0, monthlyIncome: 0, monthlyTradeValue: 0, population: 1000,
+  gold: 0, stability: 0, prestige: 0, monthlyIncome: 0, monthlyTradeValue: 0, population: 1000,
   infantry: 0, cavalry: 0, artillery: 0,
   infantryStr: 0, cavalryStr: 0, artilleryStr: 0,
   levyInfantry: 0, levyCavalry: 0,
@@ -20,7 +20,13 @@ const mkStats = (overrides: Partial<CountryEconomyStats> = {}): CountryEconomySt
   maxManpower: 0, maxSailors: 0, monthlyManpower: 0, monthlySailors: 0,
   armyMaintenance: 0, navyMaintenance: 0,
   expectedArmySize: 0, expectedNavySize: 0,
-  courtLanguage: "", govType: "", score: 0, ...overrides,
+  legitimacy: 0, inflation: 0, stabilityInvestment: 0,
+  diplomaticReputation: 0, warExhaustion: 0, powerProjection: 0, libertyDesire: 0,
+  greatPowerScore: 0, numAllies: 0,
+  armyTradition: 0, navyTradition: 0,
+  monthlyGoldIncome: 0, monthlyGoldExpense: 0, monthlyPrestige: 0, prestigeDecay: 0,
+  totalDevelopment: 0, numProvinces: 0,
+  courtLanguage: "", govType: "", primaryCulture: "", religion: "", score: 0, ...overrides,
 });
 
 const mkEntry = (tag: string, name: string, players: string[], score: number, pop: number = 1000): RankingEntry => ({

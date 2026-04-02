@@ -27,7 +27,7 @@ describe("Header links", () => {
     const { container } = render(<App />);
     const ghLink = container.querySelector(".github-link") as HTMLAnchorElement;
     expect(ghLink).toBeInTheDocument();
-    expect(ghLink.href).toBe("https://github.com/masonstevens95/eu5-map-maker");
+    expect(ghLink.href).toBe("https://github.com/masonstevens95/Vespucci");
     expect(ghLink.target).toBe("_blank");
     expect(ghLink.rel).toContain("noopener");
     expect(ghLink.textContent).toContain("GitHub");

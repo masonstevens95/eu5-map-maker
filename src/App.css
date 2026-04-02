@@ -23,6 +23,17 @@
   align-items: center;
   justify-content: space-between;
 }
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.header-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
 .app-header h1 {
   font-size: 1.6rem;
   color: #fff;
@@ -930,6 +941,41 @@
   background: #333;
   margin: 0.25rem 0;
 }
+.modal-tab-content {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.modal-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.modal-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+}
+.modal-row:nth-child(odd) {
+  background: #161622;
+}
+.modal-row-label {
+  font-size: 0.85rem;
+  color: #888;
+  flex-shrink: 0;
+}
+.modal-row-value {
+  font-size: 0.9rem;
+  color: #e0e0e0;
+  font-weight: 600;
+  text-align: right;
+}
+.modal-row-divider {
+  height: 1px;
+  background: #333;
+  margin: 0.3rem 0;
+}
 .modal-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -992,10 +1038,11 @@
   gap: 0.75rem;
   background: #1e1e2e;
   border-radius: 6px;
-  padding: 0.6rem 1rem;
+  padding: 0.85rem 1rem;
   border-left: 4px solid #666;
   cursor: pointer;
   transition: background 0.1s;
+  min-height: 3.2rem;
 }
 .ranking-row:hover {
   background: #2a2a3e;
@@ -1059,6 +1106,14 @@
   display: block;
   font-size: 0.6rem;
   color: #666;
+}
+.ranking-stat-active .ranking-stat-val {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+}
+.ranking-stat-active .ranking-stat-lbl {
+  color: #888;
 }
 
 /* Details below map */
@@ -1220,6 +1275,22 @@
 }
 
 /* Trade Tab */
+.trade-search {
+  background: #1e1e2e;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 0.35rem 0.6rem;
+  color: #e0e0e0;
+  font-size: 0.85rem;
+  width: 100%;
+}
+.trade-search::placeholder {
+  color: #555;
+}
+.trade-search:focus {
+  outline: none;
+  border-color: #48a;
+}
 .trade-goods-grid {
   display: flex;
   flex-wrap: wrap;
@@ -1296,6 +1367,21 @@
 }
 .trade-sort-active {
   color: #48a;
+}
+.trade-bar-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.trade-bar {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  opacity: 0.2;
+}
+.trade-bar-label {
+  position: relative;
+  z-index: 1;
 }
 .trade-surplus-pos {
   color: #6c6;

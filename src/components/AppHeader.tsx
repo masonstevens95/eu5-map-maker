@@ -1,6 +1,6 @@
 import type { AppTab } from "../App";
 
-const TABS: readonly AppTab[] = ["map", "rankings", "economy", "trade", "military", "wars"];
+const TABS: readonly AppTab[] = ["map", "rankings", "trade", "military", "wars"];
 
 interface Props {
   showTabs: boolean;
@@ -11,7 +11,10 @@ interface Props {
 export const AppHeader = ({ showTabs, activeTab, onTabChange }: Props) => (
   <header className="app-header">
     <div className="header-row">
-      <h1>EU5 Map Maker</h1>
+      <div className="header-brand">
+        <img src="/vespucci.jpg" alt="Vespucci" className="header-logo" />
+        <h1>Vespucci</h1>
+      </div>
       <div className="header-links">
         <a
           href="https://www.buymeacoffee.com/masoncstevg"
@@ -26,7 +29,7 @@ export const AppHeader = ({ showTabs, activeTab, onTabChange }: Props) => (
           />
         </a>
         <a
-          href="https://github.com/masonstevens95/eu5-map-maker"
+          href="https://github.com/masonstevens95/Vespucci"
           target="_blank"
           rel="noopener noreferrer"
           className="github-link"
