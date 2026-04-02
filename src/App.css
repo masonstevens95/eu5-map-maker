@@ -1313,6 +1313,21 @@
 .trade-sort-active {
   color: #48a;
 }
+.trade-bar-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.trade-bar {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  opacity: 0.2;
+}
+.trade-bar-label {
+  position: relative;
+  z-index: 1;
+}
 .trade-surplus-pos {
   color: #6c6;
 }
