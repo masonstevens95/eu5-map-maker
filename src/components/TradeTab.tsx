@@ -52,26 +52,29 @@ export const TradeTab = ({ parsed }: Props) => {
           onChange={(e) => setSearch(e.target.value)}
         />
         {subTab === "goods" ? (
-          <label className="option">
-            Sort:
-            <select
-              value={goodSortMode}
-              onChange={(e) => setGoodSortMode(e.target.value as GoodSortMode)}
-              className="style-select"
-            >
-              <option value="production">By Production</option>
-              <option value="supply">By Total Supply</option>
-              <option value="demand">By Total Demand</option>
-              <option value="price">By Avg Price</option>
-              <option value="markets">By # Markets</option>
-              <option value="name">By Name</option>
-            </select>
-            <button
-              className="sort-dir-btn"
-              onClick={() => setGoodSortDir(d => d === "desc" ? "asc" : "desc")}
-              title={goodSortDir === "desc" ? "Descending" : "Ascending"}
-            >{goodSortDir === "desc" ? "↓" : "↑"}</button>
-          </label>
+          <>
+            <label className="option">
+              Sort:
+              <select
+                value={goodSortMode}
+                onChange={(e) => setGoodSortMode(e.target.value as GoodSortMode)}
+                className="style-select"
+              >
+                <option value="production">By Production</option>
+                <option value="supply">By Total Supply</option>
+                <option value="demand">By Total Demand</option>
+                <option value="price">By Avg Price</option>
+                <option value="surplus">By Surplus</option>
+                <option value="markets">By # Markets</option>
+                <option value="name">By Name</option>
+              </select>
+              <button
+                className="sort-dir-btn"
+                onClick={() => setGoodSortDir(d => d === "desc" ? "asc" : "desc")}
+                title={goodSortDir === "desc" ? "Descending" : "Ascending"}
+              >{goodSortDir === "desc" ? "↓" : "↑"}</button>
+            </label>
+          </>
         ) : (
           <label className="option">
             Sort:
@@ -84,6 +87,7 @@ export const TradeTab = ({ parsed }: Props) => {
               <option value="price">By Price Level</option>
               <option value="food">By Food</option>
               <option value="capacity">By Capacity</option>
+              <option value="totalProduction">By Total Production</option>
               <option value="goods">By # Goods</option>
             </select>
             <button

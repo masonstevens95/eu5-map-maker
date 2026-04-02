@@ -349,6 +349,18 @@ describe("sortGoodStats", () => {
     expect(result[2].avgPrice).toBe(3);
   });
 
+  it("sorts by surplus desc", () => {
+    const result = sortGoodStats(goods, "surplus", "desc");
+    expect(result[0].totalSurplus).toBeGreaterThanOrEqual(result[1].totalSurplus);
+    expect(result[1].totalSurplus).toBeGreaterThanOrEqual(result[2].totalSurplus);
+  });
+
+  it("sorts by surplus asc", () => {
+    const result = sortGoodStats(goods, "surplus", "asc");
+    expect(result[0].totalSurplus).toBeLessThanOrEqual(result[1].totalSurplus);
+    expect(result[1].totalSurplus).toBeLessThanOrEqual(result[2].totalSurplus);
+  });
+
   it("sorts by markets desc", () => {
     const result = sortGoodStats(goods, "markets", "desc");
     expect(result[0].marketCount).toBe(3);
@@ -585,3 +597,4 @@ describe("filterMarkets", () => {
     expect(result.length).toBe(0);
   });
 });
+
