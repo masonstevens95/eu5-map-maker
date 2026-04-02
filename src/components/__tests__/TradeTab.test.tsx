@@ -39,28 +39,35 @@ const marketNames = { 1: "Venice", 2: "London" };
 describe("SortHeader", () => {
   it("renders label text", () => {
     const { container } = render(
-      <SortHeader col="supply" label="Supply" active={false} onSort={() => {}} />
+      <SortHeader col="supply" label="Supply" active={false} dir="desc" onSort={() => {}} />
     );
     expect(container.textContent).toContain("Supply");
   });
 
-  it("shows ▾ indicator when active", () => {
+  it("shows ▾ when active and desc", () => {
     const { container } = render(
-      <SortHeader col="supply" label="Supply" active={true} onSort={() => {}} />
+      <SortHeader col="supply" label="Supply" active={true} dir="desc" onSort={() => {}} />
     );
     expect(container.textContent).toContain(" ▾");
   });
 
+  it("shows ▴ when active and asc", () => {
+    const { container } = render(
+      <SortHeader col="supply" label="Supply" active={true} dir="asc" onSort={() => {}} />
+    );
+    expect(container.textContent).toContain(" ▴");
+  });
+
   it("does not show ▾ when inactive", () => {
     const { container } = render(
-      <SortHeader col="supply" label="Supply" active={false} onSort={() => {}} />
+      <SortHeader col="supply" label="Supply" active={false} dir="desc" onSort={() => {}} />
     );
     expect(container.textContent).not.toContain("▾");
   });
 
   it("has trade-sort-active class when active", () => {
     const { container } = render(
-      <SortHeader col="supply" label="Supply" active={true} onSort={() => {}} />
+      <SortHeader col="supply" label="Supply" active={true} dir="desc" onSort={() => {}} />
     );
     const span = container.querySelector("span");
     expect(span?.className).toContain("trade-sort-active");
@@ -68,7 +75,7 @@ describe("SortHeader", () => {
 
   it("does not have trade-sort-active class when inactive", () => {
     const { container } = render(
-      <SortHeader col="supply" label="Supply" active={false} onSort={() => {}} />
+      <SortHeader col="supply" label="Supply" active={false} dir="desc" onSort={() => {}} />
     );
     const span = container.querySelector("span");
     expect(span?.className).not.toContain("trade-sort-active");
@@ -77,7 +84,7 @@ describe("SortHeader", () => {
   it("calls onSort with col value on click", () => {
     const onSort = vi.fn();
     const { container } = render(
-      <SortHeader col={"price" as DetailSortMode} label="Price" active={false} onSort={onSort} />
+      <SortHeader col={"price" as DetailSortMode} label="Price" active={false} dir="desc" onSort={onSort} />
     );
     const span = container.querySelector("span")!;
     fireEvent.click(span);
@@ -252,6 +259,9 @@ describe("MarketsSubTab", () => {
       <MarketsSubTab
         markets={markets}
         marketNames={marketNames}
+        marketOwners={{}}
+        countryNames={{}}
+        countryColors={{}}
         sortMode="population"
         sortDir="desc"
         selectedMarket={undefined}
@@ -267,6 +277,9 @@ describe("MarketsSubTab", () => {
       <MarketsSubTab
         markets={markets}
         marketNames={marketNames}
+        marketOwners={{}}
+        countryNames={{}}
+        countryColors={{}}
         sortMode="population"
         sortDir="desc"
         selectedMarket={undefined}
@@ -282,6 +295,9 @@ describe("MarketsSubTab", () => {
       <MarketsSubTab
         markets={markets}
         marketNames={marketNames}
+        marketOwners={{}}
+        countryNames={{}}
+        countryColors={{}}
         sortMode="population"
         sortDir="desc"
         selectedMarket={undefined}
@@ -294,11 +310,54 @@ describe("MarketsSubTab", () => {
     expect(textsWithDialect[0].textContent).toContain("·");
   });
 
+  it("shows owner country name when marketOwners has entry", () => {
+    const { container } = render(
+      <MarketsSubTab
+        markets={markets}
+        marketNames={marketNames}
+        marketOwners={{ 1: "ENG" }}
+        countryNames={{ ENG: "England" }}
+        countryColors={{ ENG: [255, 0, 0] }}
+        sortMode="population"
+        sortDir="desc"
+        selectedMarket={undefined}
+        onSelectMarket={() => {}}
+      />
+    );
+    const veniceRow = Array.from(container.querySelectorAll(".ranking-row")).find(
+      r => r.textContent?.includes("Venice")
+    );
+    expect(veniceRow?.textContent).toContain("Owned by England");
+  });
+
+  it("uses country color for border-left when owner is known", () => {
+    const { container } = render(
+      <MarketsSubTab
+        markets={markets}
+        marketNames={marketNames}
+        marketOwners={{ 1: "ENG" }}
+        countryNames={{ ENG: "England" }}
+        countryColors={{ ENG: [255, 0, 0] }}
+        sortMode="population"
+        sortDir="desc"
+        selectedMarket={undefined}
+        onSelectMarket={() => {}}
+      />
+    );
+    const veniceRow = Array.from(container.querySelectorAll(".ranking-row")).find(
+      r => r.textContent?.includes("Venice")
+    ) as HTMLElement;
+    expect(veniceRow.style.borderLeftColor).toBe("rgb(255, 0, 0)");
+  });
+
   it("does NOT show separator when dialect is empty", () => {
     const { container } = render(
       <MarketsSubTab
         markets={markets}
         marketNames={marketNames}
+        marketOwners={{}}
+        countryNames={{}}
+        countryColors={{}}
         sortMode="population"
         sortDir="desc"
         selectedMarket={undefined}
@@ -319,6 +378,9 @@ describe("MarketsSubTab", () => {
       <MarketsSubTab
         markets={markets}
         marketNames={marketNames}
+        marketOwners={{}}
+        countryNames={{}}
+        countryColors={{}}
         sortMode="population"
         sortDir="desc"
         selectedMarket={undefined}
@@ -334,6 +396,9 @@ describe("MarketsSubTab", () => {
       <MarketsSubTab
         markets={markets}
         marketNames={marketNames}
+        marketOwners={{}}
+        countryNames={{}}
+        countryColors={{}}
         sortMode="population"
         sortDir="desc"
         selectedMarket={markets[0]}
@@ -349,6 +414,9 @@ describe("MarketsSubTab", () => {
       <MarketsSubTab
         markets={markets}
         marketNames={marketNames}
+        marketOwners={{}}
+        countryNames={{}}
+        countryColors={{}}
         sortMode="population"
         sortDir="desc"
         selectedMarket={markets[0]}
@@ -444,6 +512,27 @@ describe("GoodModal", () => {
     expect(rowsAfter[0].textContent).toContain("London");
   });
 
+  it("clicking the same column header twice toggles asc/desc", () => {
+    const sortMarkets: MarketType[] = [
+      mkMarket(1, { goods: [mkGood("goods_grain", { supply: 200 })] }),
+      mkMarket(2, { goods: [mkGood("goods_grain", { supply: 100 })] }),
+    ];
+    const { container } = render(
+      <GoodModal goodName="goods_grain" markets={sortMarkets} marketNames={marketNames} onClose={() => {}} />
+    );
+    const supplyHeader = Array.from(container.querySelectorAll(".trade-sort-header")).find(
+      el => el.textContent?.startsWith("Supply")
+    )!;
+    // Default: supply desc → Venice first, shows ▾
+    expect(container.querySelectorAll(".trade-market-row")[0].textContent).toContain("Venice");
+    expect(supplyHeader.textContent).toContain("▾");
+
+    // Click same column → toggle to asc → London first, shows ▴
+    fireEvent.click(supplyHeader);
+    expect(container.querySelectorAll(".trade-market-row")[0].textContent).toContain("London");
+    expect(supplyHeader.textContent).toContain("▴");
+  });
+
   it("close button click fires onClose", () => {
     const onClose = vi.fn();
     const { container } = render(
@@ -497,21 +586,37 @@ describe("MarketModal", () => {
 
   it("shows market name", () => {
     const { container } = render(
-      <MarketModal market={market} marketNames={marketNames} onClose={() => {}} />
+      <MarketModal market={market} marketNames={marketNames} ownerName="" onClose={() => {}} />
     );
     expect(container.querySelector(".modal-name")?.textContent).toBe("Venice");
   });
 
+  it("shows owner name in modal tag when provided", () => {
+    const { container } = render(
+      <MarketModal market={market} marketNames={marketNames} ownerName="England" onClose={() => {}} />
+    );
+    expect(container.querySelector(".modal-tag")?.textContent).toContain("Owned by England");
+  });
+
+  it("does not show owner prefix when ownerName is empty", () => {
+    const { container } = render(
+      <MarketModal market={market} marketNames={marketNames} ownerName="" onClose={() => {}} />
+    );
+    const tagText = container.querySelector(".modal-tag")?.textContent ?? "";
+    // Should start with dialect or goods count, not " · "
+    expect(tagText).not.toMatch(/^\s*·/);
+  });
+
   it("shows dialect formatted", () => {
     const { container } = render(
-      <MarketModal market={market} marketNames={marketNames} onClose={() => {}} />
+      <MarketModal market={market} marketNames={marketNames} ownerName="" onClose={() => {}} />
     );
     expect(container.textContent).toContain("Western Roman");
   });
 
   it("shows 50.0% capacity pct", () => {
     const { container } = render(
-      <MarketModal market={market} marketNames={marketNames} onClose={() => {}} />
+      <MarketModal market={market} marketNames={marketNames} ownerName="" onClose={() => {}} />
     );
     expect(container.textContent).toContain("50.0%");
   });
@@ -524,7 +629,7 @@ describe("MarketModal", () => {
       goods: [],
     });
     const { container } = render(
-      <MarketModal market={zeroCapMarket} marketNames={marketNames} onClose={() => {}} />
+      <MarketModal market={zeroCapMarket} marketNames={marketNames} ownerName="" onClose={() => {}} />
     );
     const popCapStat = Array.from(container.querySelectorAll(".modal-stat")).find(
       s => s.textContent?.includes("Pop / Capacity")
@@ -535,7 +640,7 @@ describe("MarketModal", () => {
   it("close button fires onClose", () => {
     const onClose = vi.fn();
     const { container } = render(
-      <MarketModal market={market} marketNames={marketNames} onClose={onClose} />
+      <MarketModal market={market} marketNames={marketNames} ownerName="" onClose={onClose} />
     );
     fireEvent.click(container.querySelector(".modal-close")!);
     expect(onClose).toHaveBeenCalled();
@@ -544,7 +649,7 @@ describe("MarketModal", () => {
   it("clicking overlay fires onClose", () => {
     const onClose = vi.fn();
     const { container } = render(
-      <MarketModal market={market} marketNames={marketNames} onClose={onClose} />
+      <MarketModal market={market} marketNames={marketNames} ownerName="" onClose={onClose} />
     );
     fireEvent.click(container.querySelector(".modal-overlay")!);
     expect(onClose).toHaveBeenCalled();
@@ -553,7 +658,7 @@ describe("MarketModal", () => {
   it("clicking modal-content does NOT fire onClose (stopPropagation)", () => {
     const onClose = vi.fn();
     const { container } = render(
-      <MarketModal market={market} marketNames={marketNames} onClose={onClose} />
+      <MarketModal market={market} marketNames={marketNames} ownerName="" onClose={onClose} />
     );
     fireEvent.click(container.querySelector(".modal-content")!);
     expect(onClose).not.toHaveBeenCalled();
@@ -561,7 +666,7 @@ describe("MarketModal", () => {
 
   it("default sort is supply: highest supply good is first row", () => {
     const { container } = render(
-      <MarketModal market={market} marketNames={marketNames} onClose={() => {}} />
+      <MarketModal market={market} marketNames={marketNames} ownerName="" onClose={() => {}} />
     );
     const rows = container.querySelectorAll(".trade-market-row");
     // goods_grain supply=200 > goods_wine supply=100
@@ -577,7 +682,7 @@ describe("MarketModal", () => {
       ],
     });
     const { container } = render(
-      <MarketModal market={sortableMarket} marketNames={marketNames} onClose={() => {}} />
+      <MarketModal market={sortableMarket} marketNames={marketNames} ownerName="" onClose={() => {}} />
     );
     // Default supply desc → Grain (supply 200) first
     expect(container.querySelectorAll(".trade-market-row")[0].textContent).toContain("Grain");
@@ -593,9 +698,26 @@ describe("MarketModal", () => {
     expect(rowsAfter[0].textContent).toContain("Wine");
   });
 
+  it("clicking the same column header twice toggles asc/desc", () => {
+    const { container } = render(
+      <MarketModal market={market} marketNames={marketNames} ownerName="" onClose={() => {}} />
+    );
+    const supplyHeader = Array.from(container.querySelectorAll(".trade-sort-header")).find(
+      el => el.textContent?.startsWith("Supply")
+    )!;
+    // Default: supply desc → Grain first, shows ▾
+    expect(container.querySelectorAll(".trade-market-row")[0].textContent).toContain("Grain");
+    expect(supplyHeader.textContent).toContain("▾");
+
+    // Click same column → toggle to asc → Wine first, shows ▴
+    fireEvent.click(supplyHeader);
+    expect(container.querySelectorAll(".trade-market-row")[0].textContent).toContain("Wine");
+    expect(supplyHeader.textContent).toContain("▴");
+  });
+
   it("does NOT show · separator when dialect is empty", () => {
     const { container } = render(
-      <MarketModal market={emptyDialectMarket} marketNames={marketNames} onClose={() => {}} />
+      <MarketModal market={emptyDialectMarket} marketNames={marketNames} ownerName="" onClose={() => {}} />
     );
     const modalTag = container.querySelector(".modal-tag");
     expect(modalTag?.textContent).not.toContain("·");

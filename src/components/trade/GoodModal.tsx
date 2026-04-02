@@ -21,9 +21,19 @@ interface Props {
 
 export const GoodModal = ({ goodName, markets, marketNames, onClose }: Props) => {
   const [detailSort, setDetailSort] = useState<DetailSortMode>("supply");
+  const [detailDir, setDetailDir] = useState<"asc" | "desc">("desc");
+
+  const handleSort = (col: DetailSortMode) => {
+    if (col === detailSort) {
+      setDetailDir(d => d === "desc" ? "asc" : "desc");
+    } else {
+      setDetailSort(col);
+      setDetailDir("desc");
+    }
+  };
 
   const allGoods = collectGoodEntries(goodName, markets);
-  const sorted = sortGoods(allGoods, detailSort);
+  const sorted = sortGoods(allGoods, detailSort, detailDir);
 
   const totalSupply = allGoods.reduce((s, g) => s + g.supply, 0);
   const totalDemand = allGoods.reduce((s, g) => s + g.demand, 0);
@@ -65,12 +75,12 @@ export const GoodModal = ({ goodName, markets, marketNames, onClose }: Props) =>
           <div className="trade-good-markets">
             <div className="trade-market-header">
               <span>Market</span>
-              <SortHeader col="price" label="Price" active={detailSort === "price"} onSort={setDetailSort} />
-              <SortHeader col="supply" label="Supply" active={detailSort === "supply"} onSort={setDetailSort} />
-              <SortHeader col="demand" label="Demand" active={detailSort === "demand"} onSort={setDetailSort} />
-              <SortHeader col="surplus" label="Surplus" active={detailSort === "surplus"} onSort={setDetailSort} />
-              <SortHeader col="stockpile" label="Stockpile" active={detailSort === "stockpile"} onSort={setDetailSort} />
-              <SortHeader col="totalProduction" label="Prod." active={detailSort === "totalProduction"} onSort={setDetailSort} />
+              <SortHeader col="price" label="Price" active={detailSort === "price"} dir={detailDir} onSort={handleSort} />
+              <SortHeader col="supply" label="Supply" active={detailSort === "supply"} dir={detailDir} onSort={handleSort} />
+              <SortHeader col="demand" label="Demand" active={detailSort === "demand"} dir={detailDir} onSort={handleSort} />
+              <SortHeader col="surplus" label="Surplus" active={detailSort === "surplus"} dir={detailDir} onSort={handleSort} />
+              <SortHeader col="stockpile" label="Stockpile" active={detailSort === "stockpile"} dir={detailDir} onSort={handleSort} />
+              <SortHeader col="totalProduction" label="Prod." active={detailSort === "totalProduction"} dir={detailDir} onSort={handleSort} />
             </div>
             {sorted.map((mg) => (
               <div key={mg.marketId} className="trade-market-row">

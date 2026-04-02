@@ -18,12 +18,24 @@ import { SortHeader } from "./SortHeader";
 interface Props {
   market: MarketType;
   marketNames: Readonly<Record<number, string>>;
+  ownerName: string;
   onClose: () => void;
 }
 
-export const MarketModal = ({ market, marketNames, onClose }: Props) => {
+export const MarketModal = ({ market, marketNames, ownerName, onClose }: Props) => {
   const [detailSort, setDetailSort] = useState<DetailSortMode>("supply");
-  const sortedGoods = sortGoods(market.goods, detailSort);
+  const [detailDir, setDetailDir] = useState<"asc" | "desc">("desc");
+
+  const handleSort = (col: DetailSortMode) => {
+    if (col === detailSort) {
+      setDetailDir(d => d === "desc" ? "asc" : "desc");
+    } else {
+      setDetailSort(col);
+      setDetailDir("desc");
+    }
+  };
+
+  const sortedGoods = sortGoods(market.goods, detailSort, detailDir);
 
   const totalProd = market.goods.reduce((s, g) => s + g.totalProduction, 0);
   const totalSupply = market.goods.reduce((s, g) => s + g.supply, 0);
@@ -38,6 +50,7 @@ export const MarketModal = ({ market, marketNames, onClose }: Props) => {
           <div className="modal-titles">
             <h2 className="modal-name">{marketName(market.id, marketNames)}</h2>
             <span className="modal-tag">
+              {ownerName !== "" ? "Owned by " + ownerName + " · " : ""}
               {market.dialect !== "" ? fmtDialect(market.dialect) + " · " : ""}
               {market.goods.length} goods
             </span>
@@ -82,12 +95,12 @@ export const MarketModal = ({ market, marketNames, onClose }: Props) => {
           <div className="trade-good-markets">
             <div className="trade-market-header">
               <span>Good</span>
-              <SortHeader col="price" label="Price" active={detailSort === "price"} onSort={setDetailSort} />
-              <SortHeader col="supply" label="Supply" active={detailSort === "supply"} onSort={setDetailSort} />
-              <SortHeader col="demand" label="Demand" active={detailSort === "demand"} onSort={setDetailSort} />
-              <SortHeader col="surplus" label="Surplus" active={detailSort === "surplus"} onSort={setDetailSort} />
-              <SortHeader col="stockpile" label="Stockpile" active={detailSort === "stockpile"} onSort={setDetailSort} />
-              <SortHeader col="totalProduction" label="Prod." active={detailSort === "totalProduction"} onSort={setDetailSort} />
+              <SortHeader col="price" label="Price" active={detailSort === "price"} dir={detailDir} onSort={handleSort} />
+              <SortHeader col="supply" label="Supply" active={detailSort === "supply"} dir={detailDir} onSort={handleSort} />
+              <SortHeader col="demand" label="Demand" active={detailSort === "demand"} dir={detailDir} onSort={handleSort} />
+              <SortHeader col="surplus" label="Surplus" active={detailSort === "surplus"} dir={detailDir} onSort={handleSort} />
+              <SortHeader col="stockpile" label="Stockpile" active={detailSort === "stockpile"} dir={detailDir} onSort={handleSort} />
+              <SortHeader col="totalProduction" label="Prod." active={detailSort === "totalProduction"} dir={detailDir} onSort={handleSort} />
             </div>
             {sortedGoods.map((g) => (
               <div key={g.name} className="trade-market-row">

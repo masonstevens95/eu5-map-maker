@@ -39,20 +39,19 @@ export const fmtVal = (n: number): string =>
     : n > 0 ? n.toFixed(0)
     : "—";
 
-/** Format a signed surplus value (raw binary stores demand−supply; negate to supply−demand). */
-export const fmtSurplus = (rawSurplus: number): string => {
-  const n = -rawSurplus; // flip: positive now means oversupply
-  const abs = Math.abs(n);
+/** Format a signed surplus value. Positive = oversupply, negative = deficit. */
+export const fmtSurplus = (surplus: number): string => {
+  const abs = Math.abs(surplus);
   const mag = abs >= 1_000_000 ? (abs / 1_000_000).toFixed(1) + "M"
     : abs >= 1_000 ? (abs / 1_000).toFixed(1) + "K"
     : abs.toFixed(0);
-  return n > 0 ? "+" + mag : n < 0 ? "-" + mag : "0";
+  return surplus > 0 ? "+" + mag : surplus < 0 ? "-" + mag : "0";
 };
 
-/** CSS class for surplus sign. */
-export const surplusClass = (rawSurplus: number): string =>
-  rawSurplus < 0 ? "trade-surplus-pos"
-    : rawSurplus > 0 ? "trade-surplus-neg"
+/** CSS class for surplus sign. Positive = green (oversupply), negative = red (deficit). */
+export const surplusClass = (surplus: number): string =>
+  surplus > 0 ? "trade-surplus-pos"
+    : surplus < 0 ? "trade-surplus-neg"
     : "";
 
 /** Format a dialect string for display (title-case, spaces). */
@@ -131,13 +130,15 @@ export const sortMarkets = (
   });
 };
 
-/** Sort goods within a market/good detail view (descending by chosen column). */
-export const sortGoods = <T extends MarketGoodType>(goods: readonly T[], mode: DetailSortMode): T[] =>
-  [...goods].sort((a, b) => {
-    if (mode === "price") { return b.price - a.price; }
-    else if (mode === "demand") { return b.demand - a.demand; }
-    else if (mode === "surplus") { return a.surplus - b.surplus; } // lower raw = bigger oversupply
-    else if (mode === "stockpile") { return b.stockpile - a.stockpile; }
-    else if (mode === "totalProduction") { return b.totalProduction - a.totalProduction; }
-    else { return b.supply - a.supply; }
+/** Sort goods within a market/good detail view by chosen column and direction. */
+export const sortGoods = <T extends MarketGoodType>(goods: readonly T[], mode: DetailSortMode, dir: "asc" | "desc"): T[] => {
+  const m = dir === "asc" ? 1 : -1;
+  return [...goods].sort((a, b) => {
+    if (mode === "price") { return m * (a.price - b.price); }
+    else if (mode === "demand") { return m * (a.demand - b.demand); }
+    else if (mode === "surplus") { return m * (a.surplus - b.surplus); }
+    else if (mode === "stockpile") { return m * (a.stockpile - b.stockpile); }
+    else if (mode === "totalProduction") { return m * (a.totalProduction - b.totalProduction); }
+    else { return m * (a.supply - b.supply); }
   });
+};

@@ -95,6 +95,9 @@ export const TradeTab = ({ parsed }: Props) => {
         <MarketsSubTab
           markets={trade.markets}
           marketNames={trade.marketNames}
+          marketOwners={trade.marketOwners}
+          countryNames={parsed.countryNames}
+          countryColors={parsed.countryColors}
           sortMode={marketSortMode}
           sortDir={marketSortDir}
           selectedMarket={selectedMarket}

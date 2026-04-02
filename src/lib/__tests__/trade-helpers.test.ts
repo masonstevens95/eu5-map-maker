@@ -116,48 +116,48 @@ describe("fmtSurplus", () => {
     expect(fmtSurplus(0)).toBe("0");
   });
 
-  it("raw -500 → +500 (oversupply)", () => {
-    expect(fmtSurplus(-500)).toBe("+500");
+  it("positive 500 → +500 (oversupply)", () => {
+    expect(fmtSurplus(500)).toBe("+500");
   });
 
-  it("raw 500 → -500 (deficit)", () => {
-    expect(fmtSurplus(500)).toBe("-500");
+  it("negative -500 → -500 (deficit)", () => {
+    expect(fmtSurplus(-500)).toBe("-500");
   });
 
-  it("raw -1500 → +1.5K", () => {
-    expect(fmtSurplus(-1500)).toBe("+1.5K");
+  it("positive 1500 → +1.5K", () => {
+    expect(fmtSurplus(1500)).toBe("+1.5K");
   });
 
-  it("raw 1500 → -1.5K", () => {
-    expect(fmtSurplus(1500)).toBe("-1.5K");
+  it("negative -1500 → -1.5K", () => {
+    expect(fmtSurplus(-1500)).toBe("-1.5K");
   });
 
-  it("raw -2_000_000 → +2.0M", () => {
-    expect(fmtSurplus(-2_000_000)).toBe("+2.0M");
+  it("positive 2_000_000 → +2.0M", () => {
+    expect(fmtSurplus(2_000_000)).toBe("+2.0M");
   });
 
-  it("raw 2_000_000 → -2.0M", () => {
-    expect(fmtSurplus(2_000_000)).toBe("-2.0M");
+  it("negative -2_000_000 → -2.0M", () => {
+    expect(fmtSurplus(-2_000_000)).toBe("-2.0M");
   });
 
-  it("raw -5 → +5 (small positive)", () => {
-    expect(fmtSurplus(-5)).toBe("+5");
+  it("small positive 5 → +5", () => {
+    expect(fmtSurplus(5)).toBe("+5");
   });
 
-  it("raw 5 → -5", () => {
-    expect(fmtSurplus(5)).toBe("-5");
+  it("small negative -5 → -5", () => {
+    expect(fmtSurplus(-5)).toBe("-5");
   });
 });
 
 // ─── surplusClass ─────────────────────────────────────────────────────────
 
 describe("surplusClass", () => {
-  it("returns trade-surplus-pos for negative raw (oversupply)", () => {
-    expect(surplusClass(-1)).toBe("trade-surplus-pos");
+  it("returns trade-surplus-pos for positive (oversupply)", () => {
+    expect(surplusClass(1)).toBe("trade-surplus-pos");
   });
 
-  it("returns trade-surplus-neg for positive raw (deficit)", () => {
-    expect(surplusClass(1)).toBe("trade-surplus-neg");
+  it("returns trade-surplus-neg for negative (deficit)", () => {
+    expect(surplusClass(-1)).toBe("trade-surplus-neg");
   });
 
   it("returns empty string for zero", () => {
@@ -451,39 +451,50 @@ describe("sortGoods", () => {
     mkGood("c", { price: 2, supply: 200, demand: 80, surplus: 5, stockpile: 40, totalProduction: 200 }),
   ];
 
-  it("sorts by supply desc (default)", () => {
-    const result = sortGoods(goods, "supply");
+  it("sorts by supply desc", () => {
+    const result = sortGoods(goods, "supply", "desc");
     expect(result[0].supply).toBe(300);
     expect(result[2].supply).toBe(100);
   });
 
+  it("sorts by supply asc", () => {
+    const result = sortGoods(goods, "supply", "asc");
+    expect(result[0].supply).toBe(100);
+    expect(result[2].supply).toBe(300);
+  });
+
   it("sorts by price desc", () => {
-    const result = sortGoods(goods, "price");
+    const result = sortGoods(goods, "price", "desc");
     expect(result[0].price).toBe(3);
     expect(result[2].price).toBe(1);
   });
 
   it("sorts by demand desc", () => {
-    const result = sortGoods(goods, "demand");
+    const result = sortGoods(goods, "demand", "desc");
     expect(result[0].demand).toBe(200);
     expect(result[2].demand).toBe(50);
   });
 
-  it("sorts by surplus asc (lower raw = bigger oversupply = first)", () => {
-    // raw values: -30, -10, 5 → ascending means -30 first (biggest oversupply)
-    const result = sortGoods(goods, "surplus");
+  it("sorts by surplus desc (highest first)", () => {
+    const result = sortGoods(goods, "surplus", "desc");
+    expect(result[0].surplus).toBe(5);
+    expect(result[2].surplus).toBe(-30);
+  });
+
+  it("sorts by surplus asc (lowest first)", () => {
+    const result = sortGoods(goods, "surplus", "asc");
     expect(result[0].surplus).toBe(-30);
     expect(result[2].surplus).toBe(5);
   });
 
   it("sorts by stockpile desc", () => {
-    const result = sortGoods(goods, "stockpile");
+    const result = sortGoods(goods, "stockpile", "desc");
     expect(result[0].stockpile).toBe(60);
     expect(result[2].stockpile).toBe(20);
   });
 
   it("sorts by totalProduction desc", () => {
-    const result = sortGoods(goods, "totalProduction");
+    const result = sortGoods(goods, "totalProduction", "desc");
     expect(result[0].totalProduction).toBe(300);
     expect(result[2].totalProduction).toBe(100);
   });

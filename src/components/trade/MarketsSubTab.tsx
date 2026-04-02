@@ -5,12 +5,18 @@ import {
   marketName,
   sortMarkets,
 } from "../../lib/trade-helpers";
-import type { ParsedSave } from "../../lib/types";
+import type { ParsedSave, RGB } from "../../lib/types";
 import { MarketModal } from "./MarketModal";
+
+const rgbToHex = ([r, g, b]: RGB): string =>
+  "#" + [r, g, b].map(c => c.toString(16).padStart(2, "0")).join("");
 
 interface Props {
   markets: ParsedSave["trade"]["markets"];
   marketNames: Readonly<Record<number, string>>;
+  marketOwners: Readonly<Record<number, string>>;
+  countryNames: Readonly<Record<string, string>>;
+  countryColors: Readonly<Record<string, RGB>>;
   sortMode: MarketSortMode;
   sortDir: "asc" | "desc";
   selectedMarket: MarketType | undefined;
@@ -20,6 +26,9 @@ interface Props {
 export const MarketsSubTab = ({
   markets,
   marketNames,
+  marketOwners,
+  countryNames,
+  countryColors,
   sortMode,
   sortDir,
   selectedMarket,
@@ -32,17 +41,23 @@ export const MarketsSubTab = ({
       <div className="rankings-grid">
         {sortedMarkets.map((market, idx) => {
           const totalProd = market.goods.reduce((s, g) => s + g.totalProduction, 0);
+          const ownerTag = marketOwners[market.id] ?? "";
+          const ownerName = ownerTag !== "" ? (countryNames[ownerTag] ?? ownerTag) : "";
+          const ownerColor = ownerTag !== "" && countryColors[ownerTag] !== undefined
+            ? rgbToHex(countryColors[ownerTag])
+            : "#48a";
           return (
             <div
               key={market.id}
               className="ranking-row"
-              style={{ borderLeftColor: "#48a" }}
+              style={{ borderLeftColor: ownerColor }}
               onClick={() => onSelectMarket(market)}
             >
               <span className="ranking-pos">{idx + 1}</span>
               <div className="ranking-info">
                 <span className="ranking-name">{marketName(market.id, marketNames)}</span>
                 <span className="ranking-ai">
+                  {ownerName !== "" ? "Owned by " + ownerName + " · " : ""}
                   {market.goods.length} goods
                   {market.dialect !== "" ? ` · ${fmtDialect(market.dialect)}` : ""}
                 </span>
@@ -78,6 +93,7 @@ export const MarketsSubTab = ({
         <MarketModal
           market={selectedMarket}
           marketNames={marketNames}
+          ownerName={countryNames[marketOwners[selectedMarket.id] ?? ""] ?? (marketOwners[selectedMarket.id] ?? "")}
           onClose={() => onSelectMarket(undefined)}
         />
       ) : (<></>)}
