@@ -13,7 +13,6 @@ import { CountryModal } from "./components/CountryModal";
 import { AppHeader } from "./components/AppHeader";
 import { MapTab, SHOW_DEBUG } from "./components/MapTab";
 import { RankingsTab } from "./components/RankingsTab";
-import { EconomyTab } from "./components/EconomyTab";
 import { MilitaryTab } from "./components/MilitaryTab";
 import { TradeTab } from "./components/TradeTab";
 import { WarsTab } from "./components/WarsTab";
@@ -23,7 +22,7 @@ import { findTagProvinceCount } from "./lib/format";
 import "./App.css";
 
 export type Status = "idle" | "reading" | "parsing" | "done" | "error";
-export type AppTab = "map" | "rankings" | "economy" | "trade" | "military" | "wars";
+export type AppTab = "map" | "rankings" | "trade" | "military" | "wars";
 
 export interface DebugData {
   parsed: ParsedSave;
@@ -164,10 +163,6 @@ export default function App() {
 
             {activeTab === "rankings" && (
               <RankingsTab parsed={debug.parsed} onCountryClick={handleCountryClick} />
-            )}
-
-            {activeTab === "economy" && (
-              <EconomyTab parsed={debug.parsed} onCountryClick={handleCountryClick} />
             )}
 
             {activeTab === "trade" && (

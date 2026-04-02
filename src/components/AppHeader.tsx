@@ -1,6 +1,6 @@
 import type { AppTab } from "../App";
 
-const TABS: readonly AppTab[] = ["map", "rankings", "economy", "trade", "military", "wars"];
+const TABS: readonly AppTab[] = ["map", "rankings", "trade", "military", "wars"];
 
 interface Props {
   showTabs: boolean;

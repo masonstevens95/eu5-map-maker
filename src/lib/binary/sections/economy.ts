@@ -20,6 +20,8 @@ export interface EconomyStats {
   readonly sailors: number;
   readonly stability: number;
   readonly prestige: number;
+  readonly legitimacy: number;
+  readonly inflation: number;
   readonly monthlyIncome: number;
   readonly monthlyTradeValue: number;
   readonly monthlyTaxIncome: number;
@@ -37,6 +39,8 @@ export const ECONOMY_TOKENS = {
   SAILORS: tokenId("sailors") ?? -1,
   STABILITY: tokenId("stability") ?? -1,
   PRESTIGE: tokenId("prestige") ?? -1,
+  LEGITIMACY: tokenId("legitimacy") ?? -1,
+  INFLATION: tokenId("inflation") ?? -1,
   EST_MONTHLY_INCOME: tokenId("estimated_monthly_income") ?? -1,
   MONTHLY_TRADE_VALUE: tokenId("monthly_trade_value") ?? -1,
   LAST_MONTHS_TAX: tokenId("last_months_tax_income") ?? -1,
@@ -48,7 +52,7 @@ export const ECONOMY_TOKENS = {
 // =============================================================================
 
 export const emptyEconomyStats = (): EconomyStats => ({
-  gold: 0, manpower: 0, sailors: 0, stability: 0, prestige: 0,
+  gold: 0, manpower: 0, sailors: 0, stability: 0, prestige: 0, legitimacy: 0, inflation: 0,
   monthlyIncome: 0, monthlyTradeValue: 0, monthlyTaxIncome: 0, population: 0,
 });
 
@@ -79,12 +83,14 @@ export const emptyEconomyOffsets = (): EconomyOffsets => ({
 export const readCurrencyData = (
   r: TokenReader,
   data: Uint8Array,
-): Pick<EconomyStats, "gold" | "manpower" | "sailors" | "stability" | "prestige"> => {
+): Pick<EconomyStats, "gold" | "manpower" | "sailors" | "stability" | "prestige" | "legitimacy" | "inflation"> => {
   let gold = 0;
   let manpower = 0;
   let sailors = 0;
   let stability = 0;
   let prestige = 0;
+  let legitimacy = 0;
+  let inflation = 0;
 
   let depth = 1;
   while (!r.done && depth > 0) {
@@ -114,6 +120,8 @@ export const readCurrencyData = (
         else if (fieldTok === ECONOMY_TOKENS.SAILORS) { sailors = val; }
         else if (fieldTok === ECONOMY_TOKENS.STABILITY) { stability = val; }
         else if (fieldTok === ECONOMY_TOKENS.PRESTIGE) { prestige = val; }
+        else if (fieldTok === ECONOMY_TOKENS.LEGITIMACY) { legitimacy = val; }
+        else if (fieldTok === ECONOMY_TOKENS.INFLATION) { inflation = val; }
         else { /* other currency field — skip */ }
       } else {
         r.skipValue();
@@ -123,7 +131,7 @@ export const readCurrencyData = (
     }
   }
 
-  return { gold, manpower, sailors, stability, prestige };
+  return { gold, manpower, sailors, stability, prestige, legitimacy, inflation };
 };
 
 // =============================================================================

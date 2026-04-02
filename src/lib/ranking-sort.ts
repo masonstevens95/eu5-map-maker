@@ -6,7 +6,9 @@
 
 import type { CountryEconomyStats } from "./types";
 
-export type RankingSortMode = "rank" | "country" | "player" | "population" | "income";
+export type RankingSortMode =
+  | "rank" | "country" | "player" | "population" | "income"
+  | "trade" | "treasury" | "maintenance" | "development" | "prestige" | "legitimacy";
 
 export interface RankingEntry {
   readonly tag: string;
@@ -35,34 +37,41 @@ export const findTiedScores = (entries: readonly RankingEntry[]): ReadonlySet<nu
   );
 };
 
-/** Sort ranking entries by the chosen mode. */
+/** Sort ranking entries by the chosen mode (descending for numeric, ascending for text). */
 export const sortRankings = (
   entries: readonly RankingEntry[],
   mode: RankingSortMode,
 ): readonly RankingEntry[] => {
   const sorted = [...entries];
-  sorted.sort((a, b) => {
-    if (mode === "rank") {
-      // Countries with rank 0 (no rank) go to bottom
+  const byNum = (fn: (s: CountryEconomyStats) => number) => (a: RankingEntry, b: RankingEntry) => {
+    const diff = fn(b.stats) - fn(a.stats);
+    return diff !== 0 ? diff : a.name.localeCompare(b.name);
+  };
+  if (mode === "rank") {
+    sorted.sort((a, b) => {
       const aRank = a.stats.score > 0 ? a.stats.score : 9999;
       const bRank = b.stats.score > 0 ? b.stats.score : 9999;
       const diff = aRank - bRank;
       return diff !== 0 ? diff : a.name.localeCompare(b.name);
-    } else if (mode === "country") {
-      return a.name.localeCompare(b.name);
-    } else if (mode === "player") {
+    });
+  } else if (mode === "country") {
+    sorted.sort((a, b) => a.name.localeCompare(b.name));
+  } else if (mode === "player") {
+    sorted.sort((a, b) => {
       const aPlayer = a.players.length > 0 ? a.players[0] : "\uffff";
       const bPlayer = b.players.length > 0 ? b.players[0] : "\uffff";
       const diff = aPlayer.localeCompare(bPlayer);
       return diff !== 0 ? diff : a.name.localeCompare(b.name);
-    } else if (mode === "population") {
-      return b.stats.population - a.stats.population;
-    } else if (mode === "income") {
-      return b.stats.monthlyIncome - a.stats.monthlyIncome;
-    } else {
-      return 0;
-    }
-  });
+    });
+  } else if (mode === "population") { sorted.sort(byNum(s => s.population)); }
+  else if (mode === "income") { sorted.sort(byNum(s => s.monthlyIncome)); }
+  else if (mode === "trade") { sorted.sort(byNum(s => s.monthlyTradeValue)); }
+  else if (mode === "treasury") { sorted.sort(byNum(s => s.gold)); }
+  else if (mode === "maintenance") { sorted.sort(byNum(s => s.armyMaintenance + s.navyMaintenance)); }
+  else if (mode === "development") { sorted.sort(byNum(s => s.totalDevelopment)); }
+  else if (mode === "prestige") { sorted.sort(byNum(s => s.prestige)); }
+  else if (mode === "legitimacy") { sorted.sort(byNum(s => s.legitimacy)); }
+  else { /* unknown */ }
   return sorted;
 };
 

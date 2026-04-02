@@ -5,6 +5,8 @@ export interface CountryEconomyStats {
   readonly gold: number;
   readonly monthlyIncome: number;
   readonly monthlyTradeValue: number;
+  readonly stability: number;
+  readonly prestige: number;
   readonly population: number;
   // Military — regulars: count + strength (men)
   readonly infantry: number;
@@ -35,9 +37,33 @@ export interface CountryEconomyStats {
   readonly navyMaintenance: number;
   readonly expectedArmySize: number;
   readonly expectedNavySize: number;
+  // Economy — political
+  readonly legitimacy: number;
+  readonly inflation: number;
+  readonly stabilityInvestment: number;
+  // Diplomacy / politics
+  readonly diplomaticReputation: number;
+  readonly warExhaustion: number;
+  readonly powerProjection: number;
+  readonly libertyDesire: number;
+  readonly greatPowerScore: number;
+  readonly numAllies: number;
+  // Military — traditions
+  readonly armyTradition: number;
+  readonly navyTradition: number;
+  // Economy — monthly flows
+  readonly monthlyGoldIncome: number;
+  readonly monthlyGoldExpense: number;
+  readonly monthlyPrestige: number;
+  readonly prestigeDecay: number;
+  // Territory
+  readonly totalDevelopment: number;
+  readonly numProvinces: number;
   // Identity
   readonly courtLanguage: string;
   readonly govType: string;
+  readonly primaryCulture: string;
+  readonly religion: string;
   readonly score: number;
 }
 

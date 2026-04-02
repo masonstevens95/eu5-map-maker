@@ -930,6 +930,41 @@
   background: #333;
   margin: 0.25rem 0;
 }
+.modal-tab-content {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.modal-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.modal-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+}
+.modal-row:nth-child(odd) {
+  background: #161622;
+}
+.modal-row-label {
+  font-size: 0.85rem;
+  color: #888;
+  flex-shrink: 0;
+}
+.modal-row-value {
+  font-size: 0.9rem;
+  color: #e0e0e0;
+  font-weight: 600;
+  text-align: right;
+}
+.modal-row-divider {
+  height: 1px;
+  background: #333;
+  margin: 0.3rem 0;
+}
 .modal-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -992,10 +1027,11 @@
   gap: 0.75rem;
   background: #1e1e2e;
   border-radius: 6px;
-  padding: 0.6rem 1rem;
+  padding: 0.85rem 1rem;
   border-left: 4px solid #666;
   cursor: pointer;
   transition: background 0.1s;
+  min-height: 3.2rem;
 }
 .ranking-row:hover {
   background: #2a2a3e;
@@ -1059,6 +1095,14 @@
   display: block;
   font-size: 0.6rem;
   color: #666;
+}
+.ranking-stat-active .ranking-stat-val {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+}
+.ranking-stat-active .ranking-stat-lbl {
+  color: #888;
 }
 
 /* Details below map */

@@ -5,46 +5,14 @@
  * No null, no exceptions, every if has an else.
  */
 
-import type { ParsedSave, RGB } from "./types";
+import type { ParsedSave, RGB, CountryEconomyStats } from "./types";
 import { rgbToHex } from "./colors";
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export interface CountryStats {
-  readonly gold: number;
-  readonly monthlyIncome: number;
-  readonly monthlyTradeValue: number;
-  readonly population: number;
-  readonly infantry: number;
-  readonly cavalry: number;
-  readonly artillery: number;
-  readonly infantryStr: number;
-  readonly cavalryStr: number;
-  readonly artilleryStr: number;
-  readonly levyInfantry: number;
-  readonly levyCavalry: number;
-  readonly levyInfantryStr: number;
-  readonly levyCavalryStr: number;
-  readonly heavyShips: number;
-  readonly lightShips: number;
-  readonly galleys: number;
-  readonly transports: number;
-  readonly armyFrontage: number;
-  readonly navyFrontage: number;
-  readonly maxManpower: number;
-  readonly maxSailors: number;
-  readonly monthlyManpower: number;
-  readonly monthlySailors: number;
-  readonly armyMaintenance: number;
-  readonly navyMaintenance: number;
-  readonly expectedArmySize: number;
-  readonly expectedNavySize: number;
-  readonly courtLanguage: string;
-  readonly govType: string;
-  readonly score: number;
-}
+export type CountryStats = CountryEconomyStats;
 
 export interface CountryInfo {
   readonly tag: string;
@@ -90,7 +58,7 @@ export const getSubjects = (
     : [];
 
 const EMPTY_STATS: CountryStats = {
-  gold: 0, monthlyIncome: 0, monthlyTradeValue: 0, population: 0,
+  gold: 0, stability: 0, prestige: 0, monthlyIncome: 0, monthlyTradeValue: 0, population: 0,
   infantry: 0, cavalry: 0, artillery: 0,
   infantryStr: 0, cavalryStr: 0, artilleryStr: 0,
   levyInfantry: 0, levyCavalry: 0,
@@ -100,7 +68,13 @@ const EMPTY_STATS: CountryStats = {
   maxManpower: 0, maxSailors: 0, monthlyManpower: 0, monthlySailors: 0,
   armyMaintenance: 0, navyMaintenance: 0,
   expectedArmySize: 0, expectedNavySize: 0,
-  courtLanguage: "", govType: "", score: 0,
+  legitimacy: 0, inflation: 0, stabilityInvestment: 0,
+  diplomaticReputation: 0, warExhaustion: 0, powerProjection: 0, libertyDesire: 0,
+  greatPowerScore: 0, numAllies: 0,
+  armyTradition: 0, navyTradition: 0,
+  monthlyGoldIncome: 0, monthlyGoldExpense: 0, monthlyPrestige: 0, prestigeDecay: 0,
+  totalDevelopment: 0, numProvinces: 0,
+  courtLanguage: "", govType: "", primaryCulture: "", religion: "", score: 0,
 };
 
 /** Build a CountryInfo from parsed save data for a given tag. */

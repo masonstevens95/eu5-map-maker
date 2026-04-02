@@ -32,10 +32,10 @@ describe("AppHeader", () => {
     expect(container.querySelector(".app-tabs")).toBeInTheDocument();
   });
 
-  it("renders all 6 tab buttons", () => {
+  it("renders all 5 tab buttons", () => {
     const { container } = render(<AppHeader showTabs={true} activeTab="map" onTabChange={() => {}} />);
     const tabs = container.querySelectorAll(".app-tab");
-    expect(tabs).toHaveLength(6);
+    expect(tabs).toHaveLength(5);
   });
 
   it("marks active tab", () => {
