@@ -1220,6 +1220,22 @@
 }
 
 /* Trade Tab */
+.trade-search {
+  background: #1e1e2e;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 0.35rem 0.6rem;
+  color: #e0e0e0;
+  font-size: 0.85rem;
+  width: 100%;
+}
+.trade-search::placeholder {
+  color: #555;
+}
+.trade-search:focus {
+  outline: none;
+  border-color: #48a;
+}
 .trade-goods-grid {
   display: flex;
   flex-wrap: wrap;

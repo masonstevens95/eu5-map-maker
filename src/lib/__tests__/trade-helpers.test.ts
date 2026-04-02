@@ -12,6 +12,8 @@ import {
   sortGoodStats,
   sortMarkets,
   sortGoods,
+  filterGoods,
+  filterMarkets,
   type GoodAggStats,
   type MarketGoodType,
 } from "../trade-helpers";
@@ -497,5 +499,89 @@ describe("sortGoods", () => {
     const result = sortGoods(goods, "totalProduction", "desc");
     expect(result[0].totalProduction).toBe(300);
     expect(result[2].totalProduction).toBe(100);
+  });
+});
+
+// ─── filterGoods ──────────────────────────────────────────────────────────
+
+describe("filterGoods", () => {
+  const goods = { "goods_grain": 500, "goods_wine": 300, "goods_cocoa": 100 };
+
+  it("returns all goods for empty query", () => {
+    const result = filterGoods(goods, "");
+    expect(Object.keys(result).length).toBe(3);
+  });
+
+  it("filters by formatted name (case-insensitive)", () => {
+    const result = filterGoods(goods, "grain");
+    expect(Object.keys(result)).toEqual(["goods_grain"]);
+    expect(result["goods_grain"]).toBe(500);
+  });
+
+  it("matches partial names", () => {
+    const result = filterGoods(goods, "co");
+    expect(Object.keys(result)).toEqual(["goods_cocoa"]);
+  });
+
+  it("is case-insensitive", () => {
+    const result = filterGoods(goods, "WINE");
+    expect(Object.keys(result)).toEqual(["goods_wine"]);
+  });
+
+  it("returns empty for no match", () => {
+    const result = filterGoods(goods, "silk");
+    expect(Object.keys(result).length).toBe(0);
+  });
+});
+
+// ─── filterMarkets ────────────────────────────────────────────────────────
+
+describe("filterMarkets", () => {
+  const markets = [
+    mkMarket(1),
+    mkMarket(2),
+    mkMarket(3),
+  ];
+  const marketNames = { 1: "Venice", 2: "London", 3: "Constantinople" };
+  const marketOwners = { 1: "VEN", 2: "ENG" };
+  const countryNames = { VEN: "Republic of Venice", ENG: "England" };
+
+  it("returns all markets for empty query", () => {
+    const result = filterMarkets(markets, marketNames, marketOwners, countryNames, "");
+    expect(result.length).toBe(3);
+  });
+
+  it("filters by market name", () => {
+    const result = filterMarkets(markets, marketNames, marketOwners, countryNames, "london");
+    expect(result.length).toBe(1);
+    expect(result[0].id).toBe(2);
+  });
+
+  it("filters by owner country name", () => {
+    const result = filterMarkets(markets, marketNames, marketOwners, countryNames, "england");
+    expect(result.length).toBe(1);
+    expect(result[0].id).toBe(2);
+  });
+
+  it("matches partial market name", () => {
+    const result = filterMarkets(markets, marketNames, marketOwners, countryNames, "con");
+    expect(result.length).toBe(1);
+    expect(result[0].id).toBe(3);
+  });
+
+  it("matches owner display name partially", () => {
+    const result = filterMarkets(markets, marketNames, marketOwners, countryNames, "republic");
+    expect(result.length).toBe(1);
+    expect(result[0].id).toBe(1);
+  });
+
+  it("is case-insensitive", () => {
+    const result = filterMarkets(markets, marketNames, marketOwners, countryNames, "VENICE");
+    expect(result.length).toBe(1);
+  });
+
+  it("returns empty for no match", () => {
+    const result = filterMarkets(markets, marketNames, marketOwners, countryNames, "paris");
+    expect(result.length).toBe(0);
   });
 });

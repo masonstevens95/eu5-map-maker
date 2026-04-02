@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ParsedSave } from "../lib/types";
 import type { GoodSortMode, MarketSortMode, MarketType } from "../lib/trade-helpers";
+import { filterGoods, filterMarkets } from "../lib/trade-helpers";
 import { GoodsSubTab } from "./trade/GoodsSubTab";
 import { MarketsSubTab } from "./trade/MarketsSubTab";
 
@@ -19,6 +20,12 @@ export const TradeTab = ({ parsed }: Props) => {
   const [marketSortDir, setMarketSortDir] = useState<"desc" | "asc">("desc");
   const [selectedMarket, setSelectedMarket] = useState<MarketType | undefined>(undefined);
   const [selectedGood, setSelectedGood] = useState<string | undefined>(undefined);
+  const [search, setSearch] = useState("");
+
+  const filteredGoods = filterGoods(trade.producedGoods, search);
+  const filteredMarkets = filterMarkets(
+    trade.markets, trade.marketNames, trade.marketOwners, parsed.countryNames, search,
+  );
 
   return (
     <div className="rankings-tab">
@@ -28,15 +35,22 @@ export const TradeTab = ({ parsed }: Props) => {
             className={`subtab-btn${subTab === "goods" ? " subtab-active" : ""}`}
             onClick={() => setSubTab("goods")}
           >
-            Goods ({Object.keys(trade.producedGoods).length})
+            Goods ({Object.keys(filteredGoods).length})
           </button>
           <button
             className={`subtab-btn${subTab === "markets" ? " subtab-active" : ""}`}
             onClick={() => setSubTab("markets")}
           >
-            Markets ({trade.markets.length})
+            Markets ({filteredMarkets.length})
           </button>
         </div>
+        <input
+          className="trade-search"
+          type="text"
+          placeholder={subTab === "goods" ? "Filter goods..." : "Filter markets..."}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
         {subTab === "goods" ? (
           <label className="option">
             Sort:
@@ -83,7 +97,7 @@ export const TradeTab = ({ parsed }: Props) => {
 
       {subTab === "goods" ? (
         <GoodsSubTab
-          producedGoods={trade.producedGoods}
+          producedGoods={filteredGoods}
           markets={trade.markets}
           marketNames={trade.marketNames}
           sortMode={goodSortMode}
@@ -93,7 +107,7 @@ export const TradeTab = ({ parsed }: Props) => {
         />
       ) : (
         <MarketsSubTab
-          markets={trade.markets}
+          markets={filteredMarkets}
           marketNames={trade.marketNames}
           marketOwners={trade.marketOwners}
           countryNames={parsed.countryNames}

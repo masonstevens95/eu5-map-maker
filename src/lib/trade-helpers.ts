@@ -62,6 +62,42 @@ export const fmtDialect = (d: string): string =>
 export const capacityPct = (population: number, capacity: number): string =>
   capacity > 0 ? ((population / capacity) * 100).toFixed(1) + "%" : "—";
 
+// ─── Filter helpers ───────────────────────────────────────────────────────
+
+/** Filter produced goods keys by search term matched against formatted name. */
+export const filterGoods = (
+  producedGoods: Readonly<Record<string, number>>,
+  query: string,
+): Record<string, number> => {
+  if (query === "") { return { ...producedGoods }; }
+  const q = query.toLowerCase();
+  const result: Record<string, number> = {};
+  for (const key of Object.keys(producedGoods)) {
+    if (fmtGood(key).toLowerCase().includes(q)) {
+      result[key] = producedGoods[key];
+    }
+  }
+  return result;
+};
+
+/** Filter markets by search term matched against market name or owner name. */
+export const filterMarkets = (
+  markets: ParsedSave["trade"]["markets"],
+  marketNames: Readonly<Record<number, string>>,
+  marketOwners: Readonly<Record<number, string>>,
+  countryNames: Readonly<Record<string, string>>,
+  query: string,
+): ParsedSave["trade"]["markets"] => {
+  if (query === "") { return [...markets]; }
+  const q = query.toLowerCase();
+  return markets.filter(m => {
+    const name = marketName(m.id, marketNames).toLowerCase();
+    const ownerTag = marketOwners[m.id] ?? "";
+    const owner = (countryNames[ownerTag] ?? ownerTag).toLowerCase();
+    return name.includes(q) || owner.includes(q);
+  });
+};
+
 // ─── Data helpers ──────────────────────────────────────────────────────────
 
 /** Build aggregate stats per good across all markets. */
