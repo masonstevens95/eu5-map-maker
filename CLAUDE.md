@@ -1,4 +1,4 @@
-# CLAUDE.md — EU5 Map Maker
+# CLAUDE.md — Vespucci (EU5 Save Viewer)
 
 ## Approach
 

@@ -68,7 +68,7 @@ const EMPTY_STATS: CountryStats = {
   maxManpower: 0, maxSailors: 0, monthlyManpower: 0, monthlySailors: 0,
   armyMaintenance: 0, navyMaintenance: 0,
   expectedArmySize: 0, expectedNavySize: 0,
-  legitimacy: 0, inflation: 0, stabilityInvestment: 0,
+  inflation: 0, stabilityInvestment: 0, legitimacy: 0,
   diplomaticReputation: 0, warExhaustion: 0, powerProjection: 0, libertyDesire: 0,
   greatPowerScore: 0, numAllies: 0,
   armyTradition: 0, navyTradition: 0,

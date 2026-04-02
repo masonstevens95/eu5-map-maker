@@ -250,7 +250,7 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
       navyMaintenance: cd.military.navyMaintenance,
       expectedArmySize: cd.military.expectedArmySize,
       expectedNavySize: cd.military.expectedNavySize,
-      legitimacy: cd.economy.legitimacy,
+      legitimacy: cd.politics.legitimacy,
       inflation: cd.economy.inflation,
       stabilityInvestment: cd.politics.stabilityInvestment,
       diplomaticReputation: cd.politics.diplomaticReputation,

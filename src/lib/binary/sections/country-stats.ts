@@ -26,6 +26,8 @@ const POLITICS_TOKENS = {
   NUM_PROVINCES: tokenId("num_provinces") ?? -1,
   LIBERTY_DESIRE: tokenId("liberty_desire") ?? -1,
   STABILITY_INVESTMENT: tokenId("stability_investment") ?? -1,
+  LEGITIMACY: tokenId("legitimacy") ?? -1,
+  LEGITIMACY_PCT: tokenId("legitimacy_percentage") ?? -1,
   GREAT_POWER_SCORE: tokenId("great_power_score") ?? -1,
   NUM_OF_ALLIES: tokenId("num_of_allies") ?? -1,
   ARMY_TRADITION: tokenId("army_tradition") ?? -1,
@@ -44,6 +46,7 @@ export interface PoliticsStats {
   readonly numProvinces: number;
   readonly libertyDesire: number;
   readonly stabilityInvestment: number;
+  readonly legitimacy: number;
   readonly greatPowerScore: number;
   readonly numAllies: number;
   readonly armyTradition: number;
@@ -56,7 +59,7 @@ export interface PoliticsStats {
 
 export const emptyPoliticsStats = (): PoliticsStats => ({
   diplomaticReputation: 0, warExhaustion: 0, powerProjection: 0,
-  totalDevelopment: 0, numProvinces: 0, libertyDesire: 0, stabilityInvestment: 0,
+  totalDevelopment: 0, numProvinces: 0, libertyDesire: 0, stabilityInvestment: 0, legitimacy: 0,
   greatPowerScore: 0, numAllies: 0, armyTradition: 0, navyTradition: 0,
   monthlyGoldIncome: 0, monthlyGoldExpense: 0, monthlyPrestige: 0, prestigeDecay: 0,
 });
@@ -144,6 +147,7 @@ export const readCountryDatabase = (
       let numProvOffset = -1;
       let libDesOffset = -1;
       let stabInvOffset = -1;
+      let legitimacyOffset = -1;
       let gpScoreOffset = -1;
       let numAlliesOffset = -1;
       let armyTradOffset = -1;
@@ -196,6 +200,8 @@ export const readCountryDatabase = (
           else if (ft === POLITICS_TOKENS.NUM_PROVINCES) { numProvOffset = fp; }
           else if (ft === POLITICS_TOKENS.LIBERTY_DESIRE) { libDesOffset = fp; }
           else if (ft === POLITICS_TOKENS.STABILITY_INVESTMENT) { stabInvOffset = fp; }
+          else if (ft === POLITICS_TOKENS.LEGITIMACY) { legitimacyOffset = fp; }
+          else if (ft === POLITICS_TOKENS.LEGITIMACY_PCT) { legitimacyOffset = fp; }
           else if (ft === POLITICS_TOKENS.GREAT_POWER_SCORE) { gpScoreOffset = fp; }
           else if (ft === POLITICS_TOKENS.NUM_OF_ALLIES) { numAlliesOffset = fp; }
           else if (ft === POLITICS_TOKENS.ARMY_TRADITION) { armyTradOffset = fp; }
@@ -243,6 +249,7 @@ export const readCountryDatabase = (
         numProvinces: readFixed5AtOffset(r, data, numProvOffset),
         libertyDesire: readFixed5AtOffset(r, data, libDesOffset),
         stabilityInvestment: readFixed5AtOffset(r, data, stabInvOffset),
+        legitimacy: readFixed5AtOffset(r, data, legitimacyOffset),
         greatPowerScore: readFixed5AtOffset(r, data, gpScoreOffset),
         numAllies: readFixed5AtOffset(r, data, numAlliesOffset),
         armyTradition: readFixed5AtOffset(r, data, armyTradOffset),

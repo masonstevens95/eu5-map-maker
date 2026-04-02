@@ -10,7 +10,7 @@ interface Props {
   onClose: () => void;
 }
 
-type ModalTab = "overview" | "economy" | "military" | "diplomacy";
+type ModalTab = "overview" | "economy" | "government" | "military" | "diplomacy";
 
 /** Format a raw string token as title-case display text. */
 const fmtTitle = (s: string): string =>
@@ -62,6 +62,7 @@ export const CountryModal = ({ info, countryNames, onClose }: Props) => {
           <div className="subtab-bar">
             {tabBtn("overview", "Overview")}
             {tabBtn("economy", "Economy")}
+            {tabBtn("government", "Government")}
             {tabBtn("military", "Military")}
             {tabBtn("diplomacy", "Diplomacy")}
           </div>
@@ -71,6 +72,8 @@ export const CountryModal = ({ info, countryNames, onClose }: Props) => {
               <OverviewTab info={info} stats={stats} countryNames={countryNames} subjectsOpen={subjectsOpen} setSubjectsOpen={setSubjectsOpen} />
             ) : tab === "economy" ? (
               <EconomyTab stats={stats} />
+            ) : tab === "government" ? (
+              <GovernmentTab stats={stats} />
             ) : tab === "military" ? (
               <MilitaryTab stats={stats} />
             ) : (
@@ -139,14 +142,30 @@ const EconomyTab = ({ stats }: { stats: CountryInfo["stats"] }) => (
     <Row label="Trade Value" value={fmtCurrency(stats.monthlyTradeValue)} />
     {stats.monthlyGoldIncome > 0 ? <NumRow label="Monthly Gold Income" value={stats.monthlyGoldIncome} decimals={1} /> : <></>}
     {stats.monthlyGoldExpense > 0 ? <NumRow label="Monthly Gold Expense" value={stats.monthlyGoldExpense} decimals={1} /> : <></>}
+    {stats.inflation !== 0 ? (
+      <>
+        <div className="modal-row-divider" />
+        <NumRow label="Inflation" value={stats.inflation} decimals={2} />
+      </>
+    ) : <></>}
+  </div>
+);
+
+const GovernmentTab = ({ stats }: { stats: CountryInfo["stats"] }) => (
+  <div className="modal-rows">
+    {stats.govType !== "" ? <Row label="Government Type" value={fmtGovType(stats.govType)} /> : <></>}
     <div className="modal-row-divider" />
     <NumRow label="Stability" value={stats.stability} decimals={0} />
     {stats.stabilityInvestment > 0 ? <NumRow label="Stability Investment" value={stats.stabilityInvestment} decimals={1} /> : <></>}
+    <div className="modal-row-divider" />
+    <NumRow label="Legitimacy" value={stats.legitimacy} decimals={1} />
+    <div className="modal-row-divider" />
     <NumRow label="Prestige" value={stats.prestige} decimals={1} />
     {stats.monthlyPrestige !== 0 ? <NumRow label="Monthly Prestige" value={stats.monthlyPrestige} decimals={2} /> : <></>}
     {stats.prestigeDecay !== 0 ? <NumRow label="Prestige Decay" value={stats.prestigeDecay} decimals={2} /> : <></>}
-    <NumRow label="Legitimacy" value={stats.legitimacy} decimals={1} />
-    {stats.inflation !== 0 ? <NumRow label="Inflation" value={stats.inflation} decimals={2} /> : <></>}
+    <div className="modal-row-divider" />
+    {stats.powerProjection > 0 ? <NumRow label="Power Projection" value={stats.powerProjection} decimals={1} /> : <></>}
+    {stats.warExhaustion > 0 ? <NumRow label="War Exhaustion" value={stats.warExhaustion} decimals={1} /> : <></>}
   </div>
 );
 

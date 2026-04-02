@@ -5,7 +5,7 @@ import { AppHeader } from "../AppHeader";
 describe("AppHeader", () => {
   it("renders title", () => {
     const { container } = render(<AppHeader showTabs={false} activeTab="map" onTabChange={() => {}} />);
-    expect(within(container).getByText("EU5 Map Maker")).toBeInTheDocument();
+    expect(within(container).getByText("Vespucci")).toBeInTheDocument();
   });
 
   it("renders BMC link", () => {
