@@ -244,10 +244,10 @@ const GovernmentTab = ({ stats }: { stats: CountryInfo["stats"] }) => {
       {stats.govType !== "" ? <Row label="Government Type" value={fmtGovType(stats.govType)} /> : <></>}
       {stats.governmentPower > 0 ? <NumRow label="Government Power" value={stats.governmentPower / 100} decimals={0} /> : <></>}
       {stats.diplomaticCapacity > 0 ? <NumRow label="Diplomatic Capacity" value={stats.diplomaticCapacity / 100} decimals={0} /> : <></>}
-      {stats.karma > 0 ? <NumRow label="Karma" value={stats.karma / 100} decimals={1} /> : <></>}
       {stats.religiousInfluence > 0 ? <NumRow label="Religious Influence" value={stats.religiousInfluence / 100} decimals={1} /> : <></>}
-      {stats.purity > 0 ? <NumRow label="Purity" value={stats.purity / 100} decimals={1} /> : <></>}
-      {stats.righteousness > 0 ? <NumRow label="Righteousness" value={stats.righteousness / 100} decimals={1} /> : <></>}
+      {stats.karma > 0 && stats.karma < 99000 && stats.religion.includes("buddh") ? <NumRow label="Karma" value={stats.karma / 100} decimals={1} /> : <></>}
+      {stats.purity > 0 && stats.purity !== 6000 ? <NumRow label="Purity" value={stats.purity / 100} decimals={1} /> : <></>}
+      {stats.righteousness > 0 && stats.righteousness !== 9000 ? <NumRow label="Righteousness" value={stats.righteousness / 100} decimals={1} /> : <></>}
       <div className="modal-row-divider" />
       <NumRow label="Stability" value={stats.stability / 100} decimals={1} />
       {stats.stabilityInvestment > 0 ? <NumRow label="Stability Investment" value={stats.stabilityInvestment / 100} decimals={1} /> : <></>}
