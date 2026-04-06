@@ -36,6 +36,7 @@ import { readCountryForces } from "./sections/units";
 import { BinaryToken } from "./tokens";
 import { buildDisplayName } from "../country-names";
 import type { ParsedSave, RGB, RgoData } from "../types";
+import { buildCountryProduction } from "../rgo-helpers";
 
 // ---------------------------------------------------------------------------
 // Pure helpers
@@ -53,6 +54,7 @@ const emptyParsedSave = (): ParsedSave => ({
   countryNames: {},
   countryStats: {},
   locationRgos: {},
+  countryProduction: {},
   wars: [],
   pastWars: [],
   warReparations: [],
@@ -272,6 +274,7 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
   );
 
   const countryLocations = buildCountryLocations(locationOwners, locationNames);
+  const countryProduction = buildCountryProduction(locationRgos, locationOwners);
 
   // Read actual forces from unit_manager + subunit_manager
   const forces = readCountryForces(data, dynStrings, countryTags);
@@ -496,6 +499,7 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
     countryNames,
     countryStats,
     locationRgos,
+    countryProduction,
     wars,
     pastWars,
     warReparations,

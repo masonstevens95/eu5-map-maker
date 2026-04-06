@@ -40,6 +40,7 @@ const mockParsed: ParsedSave = {
     TIM: mkStats({ score: 10, population: 300000, monthlyIncome: 50000 }),
   },
   locationRgos: {},
+  countryProduction: {},
   wars: [], pastWars: [], warReparations: [], annulledTreaties: [], royalMarriages: [], activeCBs: [],
   trade: { producedGoods: {}, marketNames: {}, marketOwners: {}, markets: [] },
 };
