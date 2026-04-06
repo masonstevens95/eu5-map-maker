@@ -142,7 +142,7 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
     r.pos = metaOff + 6;
     readMetadataLocations(r, locationNames);
   } else {
-    // metadata section not found — location names will be empty
+    console.error("[parseGamestate] 'metadata' section not found — location names will be empty");
   }
 
   const countriesOff = findSection(data, T.countries, r);
@@ -151,6 +151,7 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
   if (countriesOff >= 0) {
     r.pos = countriesOff + 6;
     readCountries(r, countryTags, countryColors, countryCapitals, overlordCandidates);
+
 
     // Second pass on database for country stats + names
     r.pos = countriesOff + 6;
@@ -179,7 +180,7 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
       }
     }
   } else {
-    // countries section not found — tags/colors/capitals will be empty
+    console.error("[parseGamestate] 'countries' section not found — tags/colors/capitals will be empty");
   }
 
   // (integration_owner removed — too many false positives from partial conquest)
@@ -189,7 +190,7 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
     r.pos = locOff + 6;
     readLocationOwnership(r, countryTags, locationOwners);
   } else {
-    // ownership locations not found — locationOwners will be empty
+    console.error("[parseGamestate] ownership 'locations' section not found — locationOwners will be empty");
   }
 
   // Dependencies: authoritative overlord-subject relationships
@@ -201,7 +202,7 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
     r.pos = dipOff + 6;
     readDiplomacy(r, subjectIds);
   } else {
-    // diplomacy section not found — subjectIds will be empty
+    console.error("[parseGamestate] 'diplomacy_manager' section not found — subjectIds will be empty");
   }
 
   // Read past wars and agreements from diplomacy relations
@@ -415,6 +416,7 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
 export const parseBinarySave = (fileData: Uint8Array): ParsedSave => {
   const pkOffset = findZipOffset(fileData);
   if (pkOffset === -1) {
+    console.error("[parseBinarySave] ZIP magic bytes (PK) not found — is this a binary .eu5 save?");
     return emptyParsedSave();
   } else {
     // found ZIP data — proceed
@@ -425,12 +427,14 @@ export const parseBinarySave = (fileData: Uint8Array): ParsedSave => {
   const stringLookup = files["string_lookup"];
 
   if (!gamestate) {
+    console.error("[parseBinarySave] 'gamestate' entry missing from save ZIP");
     return emptyParsedSave();
   } else {
     // gamestate present
   }
 
   if (!stringLookup) {
+    console.error("[parseBinarySave] 'string_lookup' entry missing from save ZIP");
     return emptyParsedSave();
   } else {
     // string_lookup present
