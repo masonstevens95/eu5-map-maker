@@ -36,7 +36,7 @@ import { readCountryForces } from "./sections/units";
 import { BinaryToken } from "./tokens";
 import { buildDisplayName } from "../country-names";
 import type { ParsedSave, RGB, RgoData } from "../types";
-import { buildCountryProduction, buildGoodsRankings } from "../rgo-helpers";
+import { buildCountryProduction, buildGoodsRankings, buildProducedGoodsRankings } from "../rgo-helpers";
 import { buildGoodAvgPrices } from "../trade-helpers";
 import { createLogger } from "../logger";
 
@@ -59,7 +59,9 @@ const emptyParsedSave = (): ParsedSave => ({
   countryStats: {},
   locationRgos: {},
   countryProduction: {},
+  countryLastMonthProduced: {},
   goodsRankings: {},
+  producedGoodsRankings: {},
   goodAvgPrices: {},
   wars: [],
   pastWars: [],
@@ -392,6 +394,15 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
     };
   }
 
+  // Build per-country last_month_produced map and produced goods rankings
+  const countryLastMonthProduced: Record<string, Record<string, number>> = {};
+  for (const [tag, cd] of Object.entries(countryDb)) {
+    if (Object.keys(cd.lastMonthProduced).length > 0) {
+      countryLastMonthProduced[tag] = cd.lastMonthProduced;
+    } else { /* no production data for this country */ }
+  }
+  const producedGoodsRankings = buildProducedGoodsRankings(countryLastMonthProduced);
+
   // Read wars
   const rawWars = readWars(data, dynStrings);
   const wars: import("../types").WarData[] = rawWars.map((w) => ({
@@ -515,7 +526,9 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
     countryStats,
     locationRgos,
     countryProduction,
+    countryLastMonthProduced,
     goodsRankings,
+    producedGoodsRankings,
     goodAvgPrices,
     wars,
     pastWars,

@@ -28,6 +28,10 @@ export interface CountryInfo {
   readonly goodsRankings: Readonly<Record<string, number>>;
   /** Global average price per good (across all markets). */
   readonly goodAvgPrices: Readonly<Record<string, number>>;
+  /** Last-month production totals for all goods (raw + manufactured). */
+  readonly lastMonthProduced: Readonly<Record<string, number>>;
+  /** Global rank (1 = top producer) for each manufactured good. */
+  readonly producedGoodsRankings: Readonly<Record<string, number>>;
 }
 
 // =============================================================================
@@ -115,6 +119,20 @@ export const buildCountryInfo = (
     }
   }
 
+  // Extract per-country last_month_produced and produced goods rankings
+  const lastMonthProduced: Readonly<Record<string, number>> =
+    parsed.countryLastMonthProduced[tag] ?? {};
+
+  const producedGoodsRankings: Record<string, number> = {};
+  for (const good of Object.keys(lastMonthProduced)) {
+    const rank = parsed.producedGoodsRankings[good]?.[tag];
+    if (rank !== undefined) {
+      producedGoodsRankings[good] = rank;
+    } else {
+      /* good not in produced rankings — skip */
+    }
+  }
+
   return {
     tag,
     displayName,
@@ -127,6 +145,8 @@ export const buildCountryInfo = (
     production,
     goodsRankings,
     goodAvgPrices: parsed.goodAvgPrices,
+    lastMonthProduced,
+    producedGoodsRankings,
   };
 };
 

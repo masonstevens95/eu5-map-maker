@@ -220,7 +220,9 @@ export interface ParsedSave {
   countryStats: Record<string, CountryEconomyStats>;
   locationRgos: Record<number, RgoData>;
   countryProduction: Record<string, Record<string, RgoProductionEntry>>;
+  countryLastMonthProduced: Record<string, Record<string, number>>;
   goodsRankings: Record<string, Record<string, number>>;
+  producedGoodsRankings: Record<string, Record<string, number>>;
   goodAvgPrices: Record<string, number>;
   wars: WarData[];
   pastWars: PastWarData[];

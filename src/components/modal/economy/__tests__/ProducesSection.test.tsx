@@ -19,12 +19,12 @@ describe("ProducesSection", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("shows the Produces label when there is production data", () => {
+  it("shows the RGOs label when there is production data", () => {
     const { container } = render(
       <ProducesSection production={{ grain: mkEntry(3, 2) }} goodsRankings={{ grain: 1 }} goodAvgPrices={{ grain: 1.5 }} />
     );
     const c = within(container);
-    expect(c.getByText("Produces")).toBeTruthy();
+    expect(c.getByText("RGOs")).toBeTruthy();
   });
 
   it("shows the good name", () => {
@@ -100,7 +100,7 @@ describe("ProducesSection", () => {
     const text = container.textContent ?? "";
     expect(text).toContain("Good");
     expect(text).toContain("Locs");
-    expect(text).toContain("Levels");
+    expect(text).toContain("RGO Lvl");
     expect(text).toContain("Price");
     expect(text).toContain("Rank");
   });

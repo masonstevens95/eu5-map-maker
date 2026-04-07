@@ -15,9 +15,11 @@ import type { EconomyStats, EconomyOffsets } from "./economy";
 import { MILITARY_TOKENS, readMilitaryAtOffsets, emptyMilitaryStats } from "./military";
 import type { MilitaryStats, MilitaryOffsets } from "./military";
 import { tokenId } from "../token-names";
-import { readFixed5AtOffset } from "./fixed5";
+import { readFixed5AtOffset, readFixed5, isFixed5 } from "./fixed5";
 import { readEstates, ESTATES_TOKEN } from "./estates";
 import type { EstateData } from "./estates";
+
+const LAST_MONTH_PRODUCED_TOK = tokenId("last_month_produced") ?? -1;
 
 // Politics / territory / extra tokens (depth-1 scalar fields)
 const POLITICS_TOKENS = {
@@ -92,6 +94,7 @@ export interface CountryData {
   readonly military: MilitaryStats;
   readonly politics: PoliticsStats;
   readonly estates: readonly EstateData[];
+  readonly lastMonthProduced: Record<string, number>;
 }
 
 // =============================================================================
@@ -104,7 +107,80 @@ export const emptyCountryData = (): CountryData => ({
   military: emptyMilitaryStats(),
   politics: emptyPoliticsStats(),
   estates: [],
+  lastMonthProduced: {},
 });
+
+// =============================================================================
+// Helpers
+// =============================================================================
+
+/**
+ * Read the flat `last_month_produced = { LOOKUP(name) = FIXED5(value) ... }` block.
+ * Strips the "goods_" prefix from keys (e.g. "goods_gold" → "gold").
+ */
+const readLastMonthProducedBlock = (
+  r: TokenReader,
+  data: Uint8Array,
+  entryEnd: number,
+  offset: number,
+): Record<string, number> => {
+  if (offset < 0) {
+    return {};
+  } else {
+    r.pos = offset;
+    r.readToken(); // field name token
+    r.expectEqual();
+    if (!r.expectOpen()) {
+      return {};
+    } else {
+      const result: Record<string, number> = {};
+      while (r.pos < entryEnd) {
+        const tok = r.peekToken();
+        if (tok === BinaryToken.CLOSE) {
+          r.readToken();
+          break;
+        } else if (tok === BinaryToken.OPEN) {
+          r.readToken();
+          r.skipBlock();
+        } else if (tok === BinaryToken.EQUAL) {
+          r.readToken();
+        } else if (
+          tok === BinaryToken.LOOKUP_U8 ||
+          tok === BinaryToken.LOOKUP_U16 ||
+          tok === BinaryToken.LOOKUP_U24 ||
+          tok === BinaryToken.QUOTED ||
+          tok === BinaryToken.UNQUOTED
+        ) {
+          r.readToken();
+          const key =
+            tok === BinaryToken.LOOKUP_U8
+              ? r.readLookupU8()
+              : tok === BinaryToken.LOOKUP_U16
+                ? r.readLookupU16()
+                : tok === BinaryToken.LOOKUP_U24
+                  ? r.readLookupU24()
+                  : r.readString();
+          r.expectEqual();
+          const valTok = r.readToken();
+          if (isFixed5(valTok)) {
+            const val = readFixed5(data, r.pos, valTok);
+            r.pos += valuePayloadSize(valTok, data, r.pos);
+            const cleanKey = key.startsWith("goods_") ? key.slice(6) : key;
+            result[cleanKey] = val;
+          } else if (isValueToken(valTok)) {
+            r.skipValuePayload(valTok);
+          } else { /* structural token — no payload */ }
+        } else if (isValueToken(tok)) {
+          r.readToken();
+          r.skipValuePayload(tok);
+        } else {
+          r.readToken();
+        }
+      }
+      return result;
+    }
+  }
+};
 
 // =============================================================================
 // Main reader
@@ -199,6 +275,9 @@ export const readCountryDatabase = (
       // Estates offset (block field)
       let estatesOffset = -1;
 
+      // Production block offset
+      let lmpOffset = -1;
+
       while (r.pos < entryEnd && depth > 0) {
         const fp = r.pos;
         const ft = r.readToken();
@@ -261,6 +340,7 @@ export const readCountryDatabase = (
           else if (ft === MILITARY_TOKENS.EXPECTED_ARMY) { expArmyOffset = fp; }
           else if (ft === MILITARY_TOKENS.EXPECTED_NAVY) { expNavyOffset = fp; }
           else if (ft === ESTATES_TOKEN) { estatesOffset = fp; }
+          else if (ft === LAST_MONTH_PRODUCED_TOK) { lmpOffset = fp; }
           else { /* other field */ }
           r.readToken();
           r.skipValue();
@@ -390,7 +470,9 @@ export const readCountryDatabase = (
         console.error(`[readCountryDatabase] no 'estates' block found in entry for tag ${tag}`);
       }
 
-      result[tag] = { identity: finalIdentity, economy, military, politics, estates };
+      const lastMonthProduced = readLastMonthProducedBlock(r, data, entryEnd, lmpOffset);
+
+      result[tag] = { identity: finalIdentity, economy, military, politics, estates, lastMonthProduced };
       r.pos = entryEnd;
     } else {
       r.readToken();

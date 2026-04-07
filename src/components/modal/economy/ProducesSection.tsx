@@ -82,16 +82,16 @@ export const ProducesSection = ({
     return (
       <>
         <div className="modal-row-divider" />
-        <div className="modal-section-label">Produces</div>
+        <div className="modal-section-label">RGOs</div>
         <div className="produces-wrap">
-          <div className="produces-row produces-row-header">
-            <ColHeader label="Good" col="good" active={sortCol === "good"} dir={sortDir} onClick={handleSort} />
-            <ColHeader label="Locs" col="locs" active={sortCol === "locs"} dir={sortDir} align="right" onClick={handleSort} />
-            <ColHeader label="Levels" col="levels" active={sortCol === "levels"} dir={sortDir} align="right" onClick={handleSort} />
-            <ColHeader label="Price" col="price" active={sortCol === "price"} dir={sortDir} align="right" onClick={handleSort} />
-            <ColHeader label="Rank" col="rank" active={sortCol === "rank"} dir={sortDir} align="right" onClick={handleSort} />
-          </div>
           <div className="produces-scroll">
+            <div className="produces-row produces-row-header">
+              <ColHeader label="Good" col="good" active={sortCol === "good"} dir={sortDir} onClick={handleSort} />
+              <ColHeader label="Locs" col="locs" active={sortCol === "locs"} dir={sortDir} align="right" onClick={handleSort} />
+              <ColHeader label="RGO Lvl" col="levels" active={sortCol === "levels"} dir={sortDir} align="right" onClick={handleSort} />
+              <ColHeader label="Price" col="price" active={sortCol === "price"} dir={sortDir} align="right" onClick={handleSort} />
+              <ColHeader label="Rank" col="rank" active={sortCol === "rank"} dir={sortDir} align="right" onClick={handleSort} />
+            </div>
             {sorted.map(([good, entry]) => {
               const rank = goodsRankings[good];
               const price = goodAvgPrices[good];

@@ -15,6 +15,7 @@ interface Props {
   markets: ParsedSave["trade"]["markets"];
   marketNames: Readonly<Record<number, string>>;
   countryProduction: Readonly<Record<string, Readonly<Record<string, RgoProductionEntry>>>>;
+  countryLastMonthProduced: Readonly<Record<string, Readonly<Record<string, number>>>>;
   countryNames: Readonly<Record<string, string>>;
   sortMode: GoodSortMode;
   sortDir: "asc" | "desc";
@@ -27,6 +28,7 @@ export const GoodsSubTab = ({
   markets,
   marketNames,
   countryProduction,
+  countryLastMonthProduced,
   countryNames,
   sortMode,
   sortDir,
@@ -53,7 +55,7 @@ export const GoodsSubTab = ({
             <div className="ranking-stats">
               <div className="ranking-stat">
                 <span className="ranking-stat-val">{fmtVal(gs.totalProduction)}</span>
-                <span className="ranking-stat-lbl">Production</span>
+                <span className="ranking-stat-lbl">Mkt. Prod.</span>
               </div>
               <div className="ranking-stat">
                 <span className="ranking-stat-val">{gs.avgPrice.toFixed(2)}</span>
@@ -84,6 +86,7 @@ export const GoodsSubTab = ({
           markets={markets}
           marketNames={marketNames}
           countryProduction={countryProduction}
+          countryLastMonthProduced={countryLastMonthProduced}
           countryNames={countryNames}
           onClose={() => onSelectGood(undefined)}
         />
