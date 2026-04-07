@@ -36,7 +36,8 @@ import { readCountryForces } from "./sections/units";
 import { BinaryToken } from "./tokens";
 import { buildDisplayName } from "../country-names";
 import type { ParsedSave, RGB, RgoData } from "../types";
-import { buildCountryProduction } from "../rgo-helpers";
+import { buildCountryProduction, buildGoodsRankings } from "../rgo-helpers";
+import { buildGoodAvgPrices } from "../trade-helpers";
 import { createLogger } from "../logger";
 
 const log = createLogger("parseBinarySave");
@@ -58,6 +59,8 @@ const emptyParsedSave = (): ParsedSave => ({
   countryStats: {},
   locationRgos: {},
   countryProduction: {},
+  goodsRankings: {},
+  goodAvgPrices: {},
   wars: [],
   pastWars: [],
   warReparations: [],
@@ -278,6 +281,7 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
 
   const countryLocations = buildCountryLocations(locationOwners, locationNames);
   const countryProduction = buildCountryProduction(locationRgos, locationOwners);
+  const goodsRankings = buildGoodsRankings(countryProduction);
 
   const productionGoodCount = Object.values(countryProduction)
     .reduce((n, goods) => n + Object.keys(goods).length, 0);
@@ -466,6 +470,7 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
     }
   }
   const trade = { ...rawTrade, marketNames, marketOwners };
+  const goodAvgPrices = buildGoodAvgPrices(trade.markets);
 
   const pastWars: import("../types").PastWarData[] = rawPastWars.map((pw) => ({
     countryATag: countryTags[pw.countryA] ?? `id:${pw.countryA}`,
@@ -510,6 +515,8 @@ const parseGamestate = (data: Uint8Array, dynStrings: string[]): ParsedSave => {
     countryStats,
     locationRgos,
     countryProduction,
+    goodsRankings,
+    goodAvgPrices,
     wars,
     pastWars,
     warReparations,

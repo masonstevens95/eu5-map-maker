@@ -133,18 +133,22 @@ export const GoodModal = ({ goodName, markets, marketNames, countryProduction, c
           {producers.length > 0 ? (
             <>
               <div className="modal-divider" />
-              <div className="trade-producers-header">Top Producers (RGO levels)</div>
+              <div className="trade-producers-header">Top Producers</div>
               <div className="trade-producers-list">
+                <div className="trade-producer-row" style={{ borderBottom: "1px solid #333", paddingBottom: "0.2rem", marginBottom: "0.1rem" }}>
+                  <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "#666" }}>Country</span>
+                  <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "#666" }}>Tag</span>
+                  <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "#666", textAlign: "right" }}>Levels</span>
+                  <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "#666", textAlign: "right" }}>Locs</span>
+                </div>
                 {producers.map((p) => (
                   <div key={p.tag} className="trade-producer-row">
                     <span className="trade-producer-name">
                       {resolveDisplayName(p.tag, countryNames)}
                     </span>
                     <span className="trade-producer-tag">{p.tag}</span>
-                    <span className="trade-producer-size">{p.totalSize} lvl</span>
-                    <span className="trade-producer-locs">
-                      {p.locationCount} loc{p.locationCount !== 1 ? "s" : ""}
-                    </span>
+                    <span className="trade-producer-size">{p.totalSize}</span>
+                    <span className="trade-producer-locs">{p.locationCount}</span>
                   </div>
                 ))}
               </div>

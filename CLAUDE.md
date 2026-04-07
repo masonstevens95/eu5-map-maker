@@ -76,7 +76,9 @@ File Upload (.eu5 or .txt)
 - Some SVG paths have inline `style="fill:..."` — must `removeAttribute("style")` before coloring
 - `countryNames` field on `ParsedSave` stores full display names (e.g., "Kingdom of Bohemia"), not raw tags
 - Dynamic countries (AAA/ABA/ACA/ADA/AEA prefixes) are game-created nations with `country_name` like "usolye_province"
-- FIXED5 tokens (0x0D48-0x0D55) use variable-length payloads (1-7 bytes), values divided by 1000
+- FIXED5 tokens: unsigned 0x0D48-0x0D4E payload=`tok-0x0D48+1`, signed 0x0D4F-0x0D55 payload=`tok-0x0D4F+1` (both 1-7 bytes); values / 1000
+- 64-bit value tokens: `F64=0x0167`, `U64=0x029c`, `I64=0x0317` (8-byte payloads); diagnostic scripts often use wrong constants causing depth explosion
+- `raw_material_size` (token 0x2e54) does NOT appear in location entries — RGO "levels" are always 1 per location (no per-location level count in saves)
 - `currency_data` block has bare FIXED5 values (no braces around individual fields like `gold = FIXED5`)
 - Dependency entries can have multiple IDs for the same tag — only canonical ID (from `countries > tags`) is valid
 - `paper.js` requires real canvas — doesn't work in jsdom/tests
@@ -106,7 +108,7 @@ Past scripts (RGO / raw_material investigation):
 - `diag-rgo4.mjs` — Multi-part: locations section scan, block at 40M with correct FIXED5 treatment, revealed LOOKUP_U16 pattern
 - `diag-rgo5.mjs` — Found 497 raw_material hits in 170M-175M; revealed `raw_material = LOOKUP_U16(idx)` and 0x0D3E pattern
 - `diag-rgo6.mjs` — Full location entry structure dump; scanned for employment/counters tokens; confirmed LOOKUP structure
-- `diag-verify.mjs` — Final verification: reads dynStrings, confirms 769/1000 locations return real goods names
+- `diag-verify.mjs` — Final verification: reads dynStrings, confirms 769/1000 locations return real goods names; confirmed `raw_material_size` absent from all entries
 
 ## Branches
 

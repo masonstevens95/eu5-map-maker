@@ -67,6 +67,43 @@ export const topGoodsForCountry = (
     .slice(0, limit);
 
 /**
+ * Build a global leaderboard: for every good, rank all countries by totalSize
+ * descending (rank 1 = highest producer).
+ *
+ * Returns: good → { tag → 1-based rank }
+ */
+export const buildGoodsRankings = (
+  countryProduction: Readonly<Record<string, Readonly<Record<string, RgoProductionEntry>>>>,
+): Record<string, Record<string, number>> => {
+  const rankings: Record<string, Record<string, number>> = {};
+
+  // Collect all (good, tag, totalSize) triples
+  const byGood: Record<string, { tag: string; totalSize: number }[]> = {};
+  for (const [tag, goods] of Object.entries(countryProduction)) {
+    for (const [good, entry] of Object.entries(goods)) {
+      if (!byGood[good]) {
+        byGood[good] = [];
+      } else {
+        /* already initialised */
+      }
+      byGood[good].push({ tag, totalSize: entry.totalSize });
+    }
+  }
+
+  // Sort each good's list descending and assign ranks
+  for (const [good, entries] of Object.entries(byGood)) {
+    const sorted = [...entries].sort((a, b) => b.totalSize - a.totalSize);
+    const rankMap: Record<string, number> = {};
+    for (let i = 0; i < sorted.length; i++) {
+      rankMap[sorted[i].tag] = i + 1;
+    }
+    rankings[good] = rankMap;
+  }
+
+  return rankings;
+};
+
+/**
  * Return the top producing countries for a given good, sorted by
  * totalSize descending, capped at `limit` entries.
  */

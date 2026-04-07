@@ -24,6 +24,10 @@ export interface CountryInfo {
   readonly subjects: readonly string[];
   readonly stats: CountryStats;
   readonly production: Readonly<Record<string, RgoProductionEntry>>;
+  /** Global rank (1 = top producer) for each good this country produces. */
+  readonly goodsRankings: Readonly<Record<string, number>>;
+  /** Global average price per good (across all markets). */
+  readonly goodAvgPrices: Readonly<Record<string, number>>;
 }
 
 // =============================================================================
@@ -100,6 +104,17 @@ export const buildCountryInfo = (
   const production: Readonly<Record<string, RgoProductionEntry>> =
     parsed.countryProduction[tag] ?? {};
 
+  // Extract this country's rank for each good it produces
+  const goodsRankings: Record<string, number> = {};
+  for (const good of Object.keys(production)) {
+    const rank = parsed.goodsRankings[good]?.[tag];
+    if (rank !== undefined) {
+      goodsRankings[good] = rank;
+    } else {
+      /* good not in global rankings — skip */
+    }
+  }
+
   return {
     tag,
     displayName,
@@ -110,6 +125,8 @@ export const buildCountryInfo = (
     subjects,
     stats,
     production,
+    goodsRankings,
+    goodAvgPrices: parsed.goodAvgPrices,
   };
 };
 

@@ -14,6 +14,7 @@ const log = createLogger("locations");
 
 const RGO_TOKEN = tokenId("rgo") ?? -1;
 const RAW_MATERIAL = tokenId("raw_material") ?? -1;
+const MAX_RAW_MATERIAL_WORKERS = tokenId("max_raw_material_workers") ?? -1;
 const RAW_MATERIAL_SIZE = tokenId("raw_material_size") ?? -1;
 const EMPLOYMENT_SIZE = tokenId("employment_size") ?? -1;
 const LOCAL_MAX_RGO_SIZE = tokenId("local_max_rgo_size") ?? -1;
@@ -141,6 +142,10 @@ const readRgoBlock = (r: TokenReader, data: Uint8Array): RgoData => {
 /**
  * Read owner + rgo from a single location entry block.
  * Cursor must be just after the opening {.
+ *
+ * raw_material (depth=1) gives the goods name via LOOKUP_U16 → dynStrings.
+ * max_raw_material_workers (depth=1 FIXED5) gives worker capacity.
+ * floor(max_raw_material_workers / 1000) = RGO levels at this location.
  */
 export const readLocationEntry = (
   r: TokenReader,
@@ -151,6 +156,9 @@ export const readLocationEntry = (
   locationRgos: Record<number, RgoData>
 ): void => {
   let depth = 1;
+  let rgoGood = "";
+  let rgoWorkers = 0;
+
   while (!r.done && depth > 0) {
     const tok = r.readToken();
 
@@ -173,13 +181,17 @@ export const readLocationEntry = (
           /* unknown or missing owner */
         }
       } else if (tok === RAW_MATERIAL) {
-        // raw_material = LOOKUP_U16(dynStrings_index) → goods name string
         r.expectEqual();
-        const good = r.readStringValue() ?? "";
-        if (good !== "") {
-          locationRgos[locId] = { good, size: 1, employment: 0, maxSize: 0, method: "", outputScale: 0 };
+        rgoGood = r.readStringValue() ?? "";
+      } else if (tok === MAX_RAW_MATERIAL_WORKERS) {
+        // max_raw_material_workers = FIXED5; floor(value / 1000) = RGO levels
+        r.expectEqual();
+        const vt = r.readToken();
+        if (isFixed5(vt)) {
+          rgoWorkers = readFixed5(data, r.pos, vt);
+          r.pos += valuePayloadSize(vt, data, r.pos);
         } else {
-          /* none or empty — location has no resource */
+          r.skipValuePayload(vt);
         }
       } else if (tok === RGO_TOKEN) {
         // Legacy: rgo = { raw_material = ... } sub-block (older save format)
@@ -197,6 +209,19 @@ export const readLocationEntry = (
     } else {
       /* depth > 1 — field token inside a nested block we don't care about */
     }
+  }
+
+  if (rgoGood !== "") {
+    locationRgos[locId] = {
+      good: rgoGood,
+      size: Math.floor(rgoWorkers / 100),
+      employment: 0,
+      maxSize: 0,
+      method: "",
+      outputScale: 0,
+    };
+  } else {
+    /* no raw_material in this location entry */
   }
 };
 

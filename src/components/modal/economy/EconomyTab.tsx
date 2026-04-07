@@ -7,9 +7,13 @@ import { ProducesSection } from "./ProducesSection";
 export const EconomyTab = ({
   stats,
   production,
+  goodsRankings,
+  goodAvgPrices,
 }: {
   stats: CountryInfo["stats"];
   production: CountryInfo["production"];
+  goodsRankings: CountryInfo["goodsRankings"];
+  goodAvgPrices: CountryInfo["goodAvgPrices"];
 }) => (
   <div className="modal-rows">
     <Row label="Treasury" value={fmtCurrency(stats.gold)} />
@@ -19,6 +23,10 @@ export const EconomyTab = ({
     />
     <Row label="Trade Value" value={fmtCurrency(stats.monthlyTradeValue)} />
     <GoldFlowSection stats={stats} />
-    <ProducesSection production={production} />
+    <ProducesSection
+      production={production}
+      goodsRankings={goodsRankings}
+      goodAvgPrices={goodAvgPrices}
+    />
   </div>
 );
