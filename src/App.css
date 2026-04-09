@@ -1544,10 +1544,7 @@
 .produces-row:last-child {
   border-bottom: none;
 }
-.produces-row-header {
-  border-bottom: 1px solid #333;
-  margin-bottom: 0.1rem;
-}
+
 .produces-col-sortable {
   font-size: 0.72rem;
   text-transform: uppercase;
@@ -1567,6 +1564,14 @@
 .produces-scroll {
   max-height: 12rem;
   overflow-y: auto;
+}
+.produces-row-header {
+  position: sticky;
+  top: 0;
+  background: #1e1e2e;
+  z-index: 1;
+  border-bottom: 1px solid #333;
+  margin-bottom: 0.1rem;
 }
 .produces-col-num {
   text-align: right;

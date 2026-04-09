@@ -211,6 +211,18 @@ export interface ActiveCBData {
   readonly startDate: number;
 }
 
+export interface BuildingSummary {
+  readonly type: string;
+  readonly count: number;
+  readonly totalLevel: number;
+  readonly totalProfit: number;
+  readonly totalUpkeep: number;
+  /** Sum of (profit + upkeep) / local_market_price per building. 0 if no good mapped or no price. */
+  readonly totalOutput: number;
+}
+
+export type CountryBuildings = Readonly<Record<string, readonly BuildingSummary[]>>;
+
 export interface ParsedSave {
   countryLocations: Record<string, string[]>;
   tagToPlayers: Record<string, string[]>;
@@ -220,8 +232,11 @@ export interface ParsedSave {
   countryStats: Record<string, CountryEconomyStats>;
   locationRgos: Record<number, RgoData>;
   countryProduction: Record<string, Record<string, RgoProductionEntry>>;
+  countryLastMonthProduced: Record<string, Record<string, number>>;
   goodsRankings: Record<string, Record<string, number>>;
+  producedGoodsRankings: Record<string, Record<string, number>>;
   goodAvgPrices: Record<string, number>;
+  countryBuildings: CountryBuildings;
   wars: WarData[];
   pastWars: PastWarData[];
   warReparations: WarReparationData[];

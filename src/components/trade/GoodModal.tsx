@@ -13,6 +13,7 @@ import {
 } from "../../lib/trade-helpers";
 import { topProducersForGood } from "../../lib/rgo-helpers";
 import { resolveDisplayName } from "../../lib/country-info";
+import { isProducedGood } from "../../lib/goods-catalog";
 import { createLogger } from "../../lib/logger";
 
 const log = createLogger("GoodModal");
@@ -58,11 +59,9 @@ export const GoodModal = ({ goodName, markets, marketNames, countryProduction, c
   };
 
   const allGoods = collectGoodEntries(goodName, markets);
-  const producers = topProducersForGood(goodName, countryProduction, 5);
-  log.info(
-    `good=${goodName} countryProduction entries:${Object.keys(countryProduction).length} ` +
-    `producers found:${producers.length}`,
-  );
+  const isProduced = isProducedGood(goodName);
+  const rgoProducers = isProduced ? [] : topProducersForGood(goodName, countryProduction, 5);
+  log.info(`good=${goodName} isProduced=${isProduced} rgoProducers:${rgoProducers.length}`);
   const sorted = sortGoods(allGoods, detailSort, detailDir);
 
   const totalSupply = allGoods.reduce((s, g) => s + g.supply, 0);
@@ -130,18 +129,18 @@ export const GoodModal = ({ goodName, markets, marketNames, countryProduction, c
               </div>
             ))}
           </div>
-          {producers.length > 0 ? (
+          {rgoProducers.length > 0 ? (
             <>
               <div className="modal-divider" />
-              <div className="trade-producers-header">Top Producers</div>
+              <div className="trade-producers-header">Top RGO Producers</div>
               <div className="trade-producers-list">
                 <div className="trade-producer-row" style={{ borderBottom: "1px solid #333", paddingBottom: "0.2rem", marginBottom: "0.1rem" }}>
                   <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "#666" }}>Country</span>
                   <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "#666" }}>Tag</span>
-                  <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "#666", textAlign: "right" }}>Levels</span>
+                  <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "#666", textAlign: "right" }}>RGO Lvl</span>
                   <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "#666", textAlign: "right" }}>Locs</span>
                 </div>
-                {producers.map((p) => (
+                {rgoProducers.map((p) => (
                   <div key={p.tag} className="trade-producer-row">
                     <span className="trade-producer-name">
                       {resolveDisplayName(p.tag, countryNames)}
@@ -153,9 +152,7 @@ export const GoodModal = ({ goodName, markets, marketNames, countryProduction, c
                 ))}
               </div>
             </>
-          ) : (
-            <></>
-          )}
+          ) : (<></>)}
         </div>
       </div>
     </div>

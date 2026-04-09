@@ -6,6 +6,7 @@
  */
 
 import type { RgoData, RgoProductionEntry } from "./types";
+import { isProducedGood } from "./goods-catalog";
 
 /**
  * Build a per-country production map from raw location data.
@@ -102,6 +103,60 @@ export const buildGoodsRankings = (
 
   return rankings;
 };
+
+/**
+ * Build a global leaderboard for produced (manufactured) goods.
+ * Uses `last_month_produced` data filtered to non-RGO goods.
+ *
+ * Returns: good → { tag → 1-based rank }
+ */
+export const buildProducedGoodsRankings = (
+  countryLastMonthProduced: Readonly<Record<string, Readonly<Record<string, number>>>>,
+): Record<string, Record<string, number>> => {
+  const rankings: Record<string, Record<string, number>> = {};
+  const byGood: Record<string, { tag: string; amount: number }[]> = {};
+
+  for (const [tag, goods] of Object.entries(countryLastMonthProduced)) {
+    for (const [good, amount] of Object.entries(goods)) {
+      if (!isProducedGood(good)) {
+        /* skip raw goods — only rank manufactured goods */
+      } else {
+        if (!byGood[good]) {
+          byGood[good] = [];
+        } else {
+          /* already initialised */
+        }
+        byGood[good].push({ tag, amount });
+      }
+    }
+  }
+
+  for (const [good, entries] of Object.entries(byGood)) {
+    const sorted = [...entries].sort((a, b) => b.amount - a.amount);
+    const rankMap: Record<string, number> = {};
+    for (let i = 0; i < sorted.length; i++) {
+      rankMap[sorted[i].tag] = i + 1;
+    }
+    rankings[good] = rankMap;
+  }
+
+  return rankings;
+};
+
+/**
+ * Return the top manufacturing countries for a produced good from last_month_produced data.
+ * Sorted by amount descending, capped at `limit` entries.
+ */
+export const topManufacturersForGood = (
+  good: string,
+  countryLastMonthProduced: Readonly<Record<string, Readonly<Record<string, number>>>>,
+  limit: number,
+): readonly { readonly tag: string; readonly amount: number }[] =>
+  Object.entries(countryLastMonthProduced)
+    .filter(([, goods]) => goods[good] !== undefined)
+    .map(([tag, goods]) => ({ tag, amount: goods[good] }))
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, limit);
 
 /**
  * Return the top producing countries for a given good, sorted by

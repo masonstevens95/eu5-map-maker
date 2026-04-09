@@ -53,7 +53,7 @@ export const GoodsSubTab = ({
             <div className="ranking-stats">
               <div className="ranking-stat">
                 <span className="ranking-stat-val">{fmtVal(gs.totalProduction)}</span>
-                <span className="ranking-stat-lbl">Production</span>
+                <span className="ranking-stat-lbl">Mkt. Prod.</span>
               </div>
               <div className="ranking-stat">
                 <span className="ranking-stat-val">{gs.avgPrice.toFixed(2)}</span>
